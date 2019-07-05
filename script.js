@@ -1,38 +1,65 @@
 console.log("Hello world")
 //define player variable
 var player = {
-  position: "relative",
+  position: "absolute",
   positionX: 0,
   positionY: 0,
   height: 10,
   width: 10,
   color: "black",
+  lastdirection:null,
   up:function (){
+    this.lastdirection = "up";
     this.positionY -=10;
-    console.log(this.positionY)
+    // console.log(this.positionY)
+    checkBorderCollision();
+    checkObjectCollision();
+    updateMove();
+
   },
   down: function(){
+    this.lastdirection = "down";
     this.positionY +=10;
-    console.log(this.positionY)
+    // console.log(this.positionY)
+    checkBorderCollision();
+    checkObjectCollision();
+    updateMove();
+
   },
   left:function (){
+    this.lastdirection = "left"
     this.positionX -=10;
-    console.log(this.positionX)
+    // console.log(this.positionX)
+    checkBorderCollision();
+    checkObjectCollision();
+    updateMove();
+
   },
   right: function(){
+    this.lastdirection = "right"
     this.positionX +=10;
-    console.log(this.positionX)
+    // console.log(this.positionX)
+    checkBorderCollision()
+    checkObjectCollision()
+    updateMove()
+
   }
 }
 //define obstacle
 var obstacle = {
-  position: "relative",
+  position: "absolute",
   positionX: 250,
   positionY: 250,
   height: 50,
   width: 50,
   color: "blue",
 }
+//define map
+var map = {
+  height: 500,
+  width: 500,
+}
+
 //generate player
 function generatePlayer(){
   var play = document.createElement("div");
@@ -68,23 +95,15 @@ function move(){
   switch(event.key){
     case "ArrowLeft":
       player.left();
-      updateMove()
-      checkCollision()
       break;
     case "ArrowUp":
       player.up();
-      updateMove()
-      checkCollision()
       break;
     case "ArrowRight":
       player.right();
-      updateMove()
-      checkCollision()
       break;
     case "ArrowDown":
       player.down();
-      updateMove()
-      checkCollision()
       break;
   }
 }
@@ -107,18 +126,74 @@ function updateMove(){
   updateMove.style.left = player.positionX+"px";
 }
 //function to check collision
-function checkCollision(){
+function checkBorderCollision(){
   var gameArea = document.querySelector("#gamearea")
-  console.log(gameArea.style.width)
-  console.log(gameArea.style.height)
-  if (player.positionX > gameArea.width+player.width){
-    player.positionX -=10;
-  } else if (player.positionX < 0-player.width){
-    player.positionX +=10;
-  } else if (player.positionY > gameArea.height+player.height){
-    player.positionY -=10;
-  } else if (player.positionY < 0-player.height){
-    player.positionY +=10;
+  if (player.positionX+player.width > map.width){
+    player.positionX-=player.width;
+  }
+  if (player.positionX<0){
+    player.positionX+=player.width;
+  }
+  if (player.positionY<0){
+    player.positionY+=player.height;
+  }
+  if (player.positionY+player.height>map.width){
+    player.positionY-=player.height;
   }
   updateMove()
+}
+//function to check for collision
+function checkObjectCollision(){
+  // console.log(obstacle.positionX)
+  // console.log(player.positionX)
+  // if ((player.positionX+player.width > obstacle.positionX)){
+  //   console.log("hit right")
+  // }
+  // if ((player.positionX < obstacle.positionX+obstacle.width)){
+  //   console.log("hit left")
+  // }
+  // if (player.positionY+player.height > obstacle.positionY) {
+  //   console.log("hit bottom")
+  // }
+  // if (player.positionY < obstacle.positionY-obstacle.height){
+  //   console.log("hit top")
+  // }
+
+
+
+  if ((player.positionX+player.width > obstacle.positionX) && (player.positionX < obstacle.positionX+obstacle.width) && (player.positionY+player.height > obstacle.positionY) && (player.positionY < obstacle.positionY+obstacle.height)){
+    console.log("collision happened");
+    console.log(player.lastdirection);
+    //check which direction player is accessing the obstacle from
+    //move player back in opposite direction
+    switch (player.lastdirection){
+      case "up": player.positionY+=player.height;
+      break;
+      case "down": player.positionY-=player.height;
+      break;
+      case "left": player.positionX+=player.width;
+      break;
+      case "right": player.positionX-=player.width;
+      break;
+    }
+    updateMove()
+    console.log("move updated!")
+    }
+
+
+
+    // if (player.positionX+player.width > obstacle.positionX){
+    //   console.log("movebackleft")
+    //   player.positionX-=player.width;
+    // }else if (player.positionX<obstacle.positionX+obstacle.width){
+    //   console.log("movebackright")
+    //   player.positionX+=player.width;
+    // }else if (player.positionY<obstacle.positionY+obstacle.height){
+    //   console.log("movebackdown")
+    //   player.positionY+=player.height;
+    // }else if (player.positionY+player.height>obstacle.positionY){
+    //   console.log("movebackup")
+    //   player.positionY-=player.height;
+    // }
+
 }

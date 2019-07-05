@@ -3,6 +3,7 @@
   width: 500px;
   background-color: red;
   margin:auto;
+  position:relative;
 }
 .buttons{
   height: 20px;
