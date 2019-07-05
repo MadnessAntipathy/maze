@@ -42,19 +42,16 @@ var player = {
   }
 }
 //define obstacle
-var obstacle = {
-  position: "absolute",
-  positionX: 250,
-  positionY: 250,
-  height: 50,
-  width: 50,
-  color: "blue",
-  id: null,
-  path:[
-    circle(),
-    square(),
-  ],
-}
+// var obstacle = {
+//   position: "absolute",
+//   positionX: 250,
+//   positionY: 250,
+//   height: 50,
+//   width: 50,
+//   color: "blue",
+//   id: null,
+//   type: null,
+// }
 //define map
 var map = {
   height: 500,
@@ -72,12 +69,13 @@ var safeHouse = {
 //define collectible
 var collectible = {
   position: "absolute",
-  height: 100,
-  width: 100,
+  height: 10,
+  width: 10,
   positionX: null,
   positionY: null,
   color: "green",
-  name: null,
+  id: null,
+  type: null,
 }
 //generate player
 function generatePlayer(){
@@ -110,18 +108,18 @@ var obstacleArray = [];
 function generateArmageddon(){
   var randPosX = Math.floor(Math.random()*map.width);
   var randPosY = Math.floor(Math.random()*map.height);
-  if (randPosX%10!=0 || randPosY%10!=0 || randPosX+obstacle.width>map.width || randPosY+obstacle.height>map.height){
+  if (randPosX%10!=0 || randPosY%10!=0 || randPosX+10>map.width || randPosY+10>map.height){
       generateArmageddon();
     }else{
         var obj = document.createElement("div");
         obj.setAttribute("class","armageddon");
         obj.setAttribute("id", randPosX);
-        obj.style.position = obstacle.position;
-        obj.style.height = obstacle.height+"px";
-        obj.style.width = obstacle.width+"px";
+        obj.style.position = "absolute";
+        obj.style.height = "10px";
+        obj.style.width = "10px";
         obj.style.top = randPosY+"px";
         obj.style.left = randPosX+"px";
-        obj.style.backgroundColor = obstacle.color;
+        obj.style.backgroundColor = "blue";
         var mapping = document.querySelector("#gamearea");
         mapping.appendChild(obj);
 
@@ -129,23 +127,31 @@ function generateArmageddon(){
           position: "absolute",
           positionX: randPosX,
           positionY: randPosY,
-          height: obstacle.height,
-          width: obstacle.width,
+          height: 10,
+          width: 10,
           color: "blue",
           id: randPosX,
+          type: "boom",
         }
         obstacleArray.push(newObstacle);
     }
     checkObjectCollision();
 }
 //generate obstacle path at random
-function circle(){
-
+function animate(obj, newCollectible){
+  var movingObj = setInterval(animation,200)
+  function animation(){
+    if (newCollectible.status === true){
+      clearInterval(movingObj);
+    }else {
+      newCollectible.positionX -= 1;
+      checkObjectCollision();
+      // obj.style.top += 10;
+      obj.style.left = newCollectible.positionX+"px";
+    }
+  }
 }
 
-function square(){
-
-}
 //generate safehouse
 function generateSafeHouse(){
   var obj = document.createElement("div");
@@ -167,8 +173,7 @@ function generateCollectibles(){
     }else{
         var obj = document.createElement("div");
         obj.setAttribute("class","collectible");
-        obj.setAttribute("value", randPosX);
-        obj.setAttribute("name", randPosY);
+        obj.setAttribute("id", randPosX);
         obj.style.position = collectible.position;
         obj.style.height = collectible.height+"px";
         obj.style.width = collectible.width+"px";
@@ -178,15 +183,19 @@ function generateCollectibles(){
         var mapping = document.querySelector("#gamearea");
         mapping.appendChild(obj);
 
+
         var newCollectible = {
           position: "absolute",
           positionX: randPosX,
           positionY: randPosY,
-          height: obstacle.height,
-          width: obstacle.width,
+          height: collectible.height,
+          width: collectible.width,
           name: randPosY,
-          value: randPosX,
+          id: randPosX,
+          statuscollected: false,
+          type: "good",
         }
+        animate(obj, newCollectible);
         obstacleArray.push(newCollectible);
     }
     checkObjectCollision();
@@ -209,6 +218,7 @@ function move(){
       break;
   }
 }
+
 //for use in case arrow keys do not work
 function moveSetSecondary (){
   var moving = event.target
@@ -245,19 +255,24 @@ function checkBorderCollision(){
 }
 //function to check for collision
 function checkObjectCollision(){
-for (var i = 0; i < obstacleArray.length; i++){
-  if ((player.positionX+player.width > obstacleArray[i].positionX) && (player.positionX < obstacleArray[i].positionX+obstacleArray[i].width) && (player.positionY+player.height > obstacleArray[i].positionY) && (player.positionY < obstacleArray[i].positionY+obstacleArray[i].height)){
-
-    if (obstacleArray[i].id){
-      console.log("collision happened");
-    }else if (obstacleArray[i].value){
-      var removeElement = document.getElementsByName(obstacleArray[i].name);
-      removeElement[0].parentNode.removeChild(removeElement[0]);
-
-      console.log("element removed!");
-      obstacleArray.splice(obstacleArray[i],1);
-      console.log("powerup happened");
+  for (var i = 0; i < obstacleArray.length; i++){
+    if ((player.positionX+player.width > obstacleArray[i].positionX) && (player.positionX < obstacleArray[i].positionX+obstacleArray[i].width) && (player.positionY+player.height > obstacleArray[i].positionY) && (player.positionY < obstacleArray[i].positionY+obstacleArray[i].height)){
+      console.log(obstacleArray[i])
+      if (obstacleArray[i].type === "boom"){
+        console.log("boom!")
+      }
+      if (obstacleArray[i].type === "good"){
+        var num = obstacleArray[i].id;
+        obstacleArray[i].status = true;
+        var txt = num.toString();
+        var removeElement = document.getElementById(txt);
+        removeElement.remove();
+        obstacleArray.splice(i,1);
+      }
     }
+  }
+}
+
     // console.log(player.lastdirection);
     //check which direction player is accessing the obstacle from
     //move player back in opposite direction
@@ -273,9 +288,7 @@ for (var i = 0; i < obstacleArray.length; i++){
     // }
     // updateMove()
     // console.log("move updated!")
-    }
-  }
-}
+
 
 // function checkObjectCollision(){
 // for (var i = 0; i < obstacleArray.length; i++){
