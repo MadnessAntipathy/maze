@@ -19,3 +19,11 @@
   justify-content: center;
   align-items: center;
 }
+#spacing{
+  height: 20px;
+  width: 50px;
+}
+#startbutton{
+  width: 100px;
+  margin: auto;
+}
