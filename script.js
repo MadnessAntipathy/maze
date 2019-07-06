@@ -1,6 +1,9 @@
 console.log("Hello world")
+//define global variable
+var obstacleArray = [];
 //define player variable
 var player = {
+  active: false,
   position: "absolute",
   positionX: null,
   positionY: null,
@@ -8,74 +11,58 @@ var player = {
   width: 10,
   color: "black",
   lastdirection:null,
+  collecteditems: null,
+  score: null,
   up:function (){
     this.lastdirection = "up";
     this.positionY -=5;
-    // console.log(this.positionY)
-    checkBorderCollision();
-    checkObjectCollision();
-    updateMove();
   },
   down: function(){
     this.lastdirection = "down";
     this.positionY +=5;
-    // console.log(this.positionY)
-    checkBorderCollision();
-    checkObjectCollision();
-    updateMove();
   },
   left:function (){
     this.lastdirection = "left"
     this.positionX -=5;
-    // console.log(this.positionX)
-    checkBorderCollision();
-    checkObjectCollision();
-    updateMove();
   },
   right: function(){
     this.lastdirection = "right"
     this.positionX +=5;
-    // console.log(this.positionX)
-    checkBorderCollision()
-    checkObjectCollision()
-    updateMove()
   }
 }
-//define obstacle
-// var obstacle = {
-//   position: "absolute",
-//   positionX: 250,
-//   positionY: 250,
-//   height: 50,
-//   width: 50,
-//   color: "blue",
-//   id: null,
-//   type: null,
-// }
 //define map
 var map = {
   height: 500,
   width: 500,
-}
-//define safeHouse
-var safeHouse = {
-  position: "absolute",
-  height: 100,
-  width: 100,
-  positionX: 200,
-  positionY: 400,
   color: "brown",
+  margin: "auto",
+  position: "relative",
+  id: "gamearea"
 }
-//define collectible
-var collectible = {
-  position: "absolute",
-  height: 10,
-  width: 10,
-  positionX: null,
-  positionY: null,
-  color: "green",
-  id: null,
-  type: null,
+//generate map
+function generateMap(){
+  var gameMap = document.createElement("div");
+  gameMap.style.height = map.height+"px";
+  gameMap.style.height = map.width+"px";
+  gameMap.style.backgroundColor = map.color;
+  gameMap.style.margin = map.margin;
+  gameMap.style.position = map.position;
+  gameMap.setAttribute("id", map.id);
+  document.querySelector("#gamecontainer").appendChild(gameMap);
+}
+//generate stat counter
+function generateStatCount(){
+  var statCount = document.createElement("div");
+  statCount.setAttribute("id", "scorecounter")
+  statCount.style.position = "absolute";
+  statCount.style.top = "20px";
+  statCount.style.right = "20px";
+  statCount.style.height = "20px";
+  statCount.style.width = "150px";
+  statCount.style.backgroundColor = "rgba(255,0,0,0.5)"
+  statCount.style.color = "white";
+  statCount.innerText = "Your score is: ";
+  document.querySelector("#gamearea").appendChild(statCount);
 }
 //generate player
 function generatePlayer(){
@@ -87,74 +74,25 @@ function generatePlayer(){
   play.style.top = 0+"px";
   play.style.left = 0+"px";
   play.style.backgroundColor = player.color;
+  player.active = true;
   var map = document.querySelector("#gamearea");
   map.appendChild(play);
 }
-//generate Armageddon
-function multigeddon(){
-  document.querySelectorAll(".armageddon").forEach(function(arm){
-    arm.remove();
-  });
-  while(obstacleArray.length!=0){
-    obstacleArray.pop();
-  }
-  var randNum = Math.floor(Math.random()*10);
-  for (var i = 0; i < randNum; i++){
-    generateArmageddon();
-  }
-}
-//generate obstacle
-var obstacleArray = [];
-function generateArmageddon(){
-  var randPosX = Math.floor(Math.random()*map.width);
-  var randPosY = Math.floor(Math.random()*map.height);
-  if (randPosX%10!=0 || randPosY%10!=0 || randPosX+10>map.width || randPosY+10>map.height){
-      generateArmageddon();
-    }else{
-        var obj = document.createElement("div");
-        obj.setAttribute("class","armageddon");
-        obj.setAttribute("id", randPosX);
-        obj.style.position = "absolute";
-        obj.style.height = "10px";
-        obj.style.width = "10px";
-        obj.style.top = randPosY+"px";
-        obj.style.left = randPosX+"px";
-        obj.style.backgroundColor = "blue";
-        var mapping = document.querySelector("#gamearea");
-        mapping.appendChild(obj);
-
-        var newObstacle = {
-          position: "absolute",
-          positionX: randPosX,
-          positionY: randPosY,
-          height: 10,
-          width: 10,
-          color: "blue",
-          id: randPosX,
-          type: "boom",
-        }
-        obstacleArray.push(newObstacle);
-    }
-    checkObjectCollision();
-}
-//generate obstacle path at random
-function animate(obj, newCollectible){
-  var movingObj = setInterval(animation,200)
-  function animation(){
-    if (newCollectible.status === true){
-      clearInterval(movingObj);
-    }else {
-      newCollectible.positionX -= 1;
-      checkObjectCollision();
-      // obj.style.top += 10;
-      obj.style.left = newCollectible.positionX+"px";
-    }
-  }
-}
-
 //generate safehouse
 function generateSafeHouse(){
+  var safeHouse = {
+    position: "absolute",
+    height: 100,
+    width: 100,
+    positionX: 200,
+    positionY: 400,
+    color: "yellow",
+    type: "safe",
+    id: "safehouse",
+  }
+  obstacleArray.push(safeHouse);
   var obj = document.createElement("div");
+  obj.setAttribute("id", safeHouse.id);
   obj.style.position = safeHouse.position;
   obj.style.height = safeHouse.height+"px";
   obj.style.width = safeHouse.width+"px";
@@ -164,43 +102,146 @@ function generateSafeHouse(){
   var map = document.querySelector("#gamearea");
   map.appendChild(obj);
 }
-//generate collectible for player
-function generateCollectibles(){
+//generate many bombs on map and clears previous
+function generateMultigeddon(){
+  var randNum = Math.floor(Math.random()*10);
+  for (var i = 0; i < randNum; i++){
+    generateArmageddon();
+  }
+}
+function generateArmageddon(){
+  var randId = Math.floor(Math.random()*100000)
   var randPosX = Math.floor(Math.random()*map.width);
   var randPosY = Math.floor(Math.random()*map.height);
+  var newObstacle = {
+    position: "absolute",
+    class: "armageddon",
+    positionX: randPosX,
+    positionY: randPosY,
+    height: 10,
+    width: 10,
+    status: false,
+    color: "blue",
+    id: randId,
+    type: "boom",
+  }
+  if (randPosX%10!=0 || randPosY%10!=0 || randPosX+10>map.width || randPosY+10>map.height){
+      generateArmageddon();
+    }else{
+      var obj = document.createElement("div");
+      obj.setAttribute("class",newObstacle.class);
+      obj.setAttribute("id", newObstacle.id);
+      obj.style.position = newObstacle.position;
+      obj.style.height = newObstacle.height+"px";
+      obj.style.width = newObstacle.width+"px";
+      obj.style.top = newObstacle.positionY+"px";
+      obj.style.left = newObstacle.positionX+"px";
+      obj.style.backgroundColor = newObstacle.color;
+      var mapping = document.querySelector("#gamearea");
+      mapping.appendChild(obj);
+      animateObjects(obj, newObstacle);
+      obstacleArray.push(newObstacle);
+    }
+}
+//generate collectible items
+function generateCollectibles(){
+  var randId = Math.floor(Math.random()*100000)
+  var randPosX = Math.floor(Math.random()*map.width);
+  var randPosY = Math.floor(Math.random()*map.height);
+  var collectible = {
+    position: "absolute",
+    class: "collectible",
+    height: 10,
+    width: 10,
+    positionX: randPosX,
+    positionY: randPosY,
+    color: "green",
+    id: randId,
+    status: false,
+    type: "good",
+  }
   if (randPosX%10!=0 || randPosY%10!=0 || randPosX+collectible.width>map.width || randPosY+collectible.height>map.height){
       generateCollectibles();
     }else{
-        var obj = document.createElement("div");
-        obj.setAttribute("class","collectible");
-        obj.setAttribute("id", randPosX);
-        obj.style.position = collectible.position;
-        obj.style.height = collectible.height+"px";
-        obj.style.width = collectible.width+"px";
-        obj.style.top = randPosY+"px";
-        obj.style.left = randPosX+"px";
-        obj.style.backgroundColor = collectible.color;
-        var mapping = document.querySelector("#gamearea");
-        mapping.appendChild(obj);
-
-
-        var newCollectible = {
-          position: "absolute",
-          positionX: randPosX,
-          positionY: randPosY,
-          height: collectible.height,
-          width: collectible.width,
-          name: randPosY,
-          id: randPosX,
-          statuscollected: false,
-          type: "good",
-        }
-        animate(obj, newCollectible);
-        obstacleArray.push(newCollectible);
+      var obj = document.createElement("div");
+      obj.setAttribute("class",collectible.class);
+      obj.setAttribute("id", collectible.id);
+      obj.style.position = collectible.position;
+      obj.style.height = collectible.height+"px";
+      obj.style.width = collectible.width+"px";
+      obj.style.top = collectible.positionY+"px";
+      obj.style.left = collectible.positionX+"px";
+      obj.style.backgroundColor = collectible.color;
+      var mapping = document.querySelector("#gamearea");
+      mapping.appendChild(obj);
+      animateObjects(obj, collectible);
+      obstacleArray.push(collectible);
     }
-    checkObjectCollision();
 }
-//movement for player taking input from button pressed to calling the corresponding function
+//generate movement at random
+function animateObjects(obj, gameObject){
+  var moveIt = setInterval(randomMovement,20, obj, gameObject);
+  if (gameObject.type === "boom"){
+    explode(obj,gameObject);
+  }
+}
+//generate random movement for each object type
+function randomMovement(obj,gameObject){
+  var randNum = Math.floor(Math.random()*4)
+  switch (randNum){
+    case 0:
+      gameObject.positionX -= 1;
+      obj.style.left = gameObject.positionX+"px"
+    break;
+    case 1:
+      gameObject.positionX += 1;
+      obj.style.left = gameObject.positionX+"px"
+    break;
+    case 2:
+      gameObject.positionY += 1;
+      obj.style.top = gameObject.positionY+"px"
+    break;
+    case 3:
+      gameObject.positionY -= 1;
+      obj.style.top = gameObject.positionY+"px"
+    break;
+  }
+}
+//function to explode bomb when landed
+function explode (obj,gameObject){
+  var timeBomb = setTimeout(expand, 10000, obj,gameObject);
+}
+//explodes the bomb
+function expand(obj,gameObject){
+  gameObject.status = true;
+  var exploding = setInterval(expanding,20,obj, gameObject)
+  var count = 0;
+  function expanding(obj, gameObject){
+      gameObject.positionY-=1;
+      gameObject.positionX-=1;
+      gameObject.height+=2;
+      gameObject.width+=2;
+      obj.style.height = gameObject.height+"px";
+      obj.style.width = gameObject.width+"px";
+      obj.style.top = gameObject.positionY+"px";
+      obj.style.left = gameObject.positionX+"px";
+      count++;
+    if (count === 20){
+      clearInterval(exploding);
+      setTimeout(removeDebris,200,obj, gameObject)
+    }
+  }
+}
+//clear bomb elements after explosion
+function removeDebris(obj, gameObject){
+  for (var i = 0; i < obstacleArray.length; i ++){
+    if (obstacleArray[i]["id"] === gameObject.id){
+        obstacleArray.splice(i,1);
+        obj.remove();
+    }
+  }
+}
+//movement for player using arrow keys
 document.addEventListener("keydown", move);
 function move(){
   switch(event.key){
@@ -218,7 +259,6 @@ function move(){
       break;
   }
 }
-
 //for use in case arrow keys do not work
 function moveSetSecondary (){
   var moving = event.target
@@ -228,50 +268,103 @@ function moveSetSecondary (){
       player[direction]();
     }
   }
-  updateMove()
 }
 //function to update move each time player pushes a key
-function updateMove(){
-  var updateMove = document.querySelector("#player");
-  updateMove.style.top = player.positionY+"px";
-  updateMove.style.left = player.positionX+"px";
+function updatePlayerMove(){
+  if (player.active === true){
+    var updateMovement = document.querySelector("#player");
+    updateMovement.style.top = player.positionY+"px";
+    updateMovement.style.left = player.positionX+"px";
+  }
 }
+//function to update objects as they move
+// function updateObjectMove(){
+//   for (var i = 0; i < obstacleArray.length; i++){
+//     var num = obstacleArray[i].id;
+//     var txt = num.toString();
+//     var obj = document.getElementById(txt);
+//     obj.style.top = obstacleArray[i].positionY+"px";
+//     obj.style.left = obstacleArray[i].positionX+"px";
+//   }
+// }
 //function to check collision
 function checkBorderCollision(){
   var gameArea = document.querySelector("#gamearea")
   if (player.positionX+player.width > map.width){
     player.positionX-=player.width;
-  }
-  if (player.positionX<0){
+  }else if (player.positionX<0){
     player.positionX+=player.width;
-  }
-  if (player.positionY<0){
+  }else if (player.positionY<0){
     player.positionY+=player.height;
-  }
-  if (player.positionY+player.height>map.width){
+  }else if (player.positionY+player.height>map.width){
     player.positionY-=player.height;
   }
-  updateMove()
 }
-//function to check for collision
+//checks if object is going out of play area
+function checkObjectBorderCollision(){
+  for (var i = 0; i < obstacleArray.length; i++){
+    var num = obstacleArray[i].id;
+    var txt = num.toString();
+    var obj = document.getElementById(txt);
+    if (obstacleArray[i].positionX+obstacleArray[i].width > map.width){
+      obstacleArray[i].positionX-=obstacleArray[i].width;
+    }
+    if (obstacleArray[i].positionX<0){
+      obstacleArray[i].positionX+=obstacleArray[i].width;
+    }
+    if (obstacleArray[i].positionY<0){
+      obstacleArray[i].positionY+=obstacleArray[i].height;
+    }
+    if (obstacleArray[i].positionY+obstacleArray[i].height>map.width){
+      obstacleArray[i].positionY-=obstacleArray[i].height;
+    }
+  }
+}
+//function to check for collision between objects and player
 function checkObjectCollision(){
   for (var i = 0; i < obstacleArray.length; i++){
     if ((player.positionX+player.width > obstacleArray[i].positionX) && (player.positionX < obstacleArray[i].positionX+obstacleArray[i].width) && (player.positionY+player.height > obstacleArray[i].positionY) && (player.positionY < obstacleArray[i].positionY+obstacleArray[i].height)){
-      console.log(obstacleArray[i])
-      if (obstacleArray[i].type === "boom"){
+      if (obstacleArray[i].type === "boom" && obstacleArray[i].status===true){
         console.log("boom!")
-      }
-      if (obstacleArray[i].type === "good"){
+      }else if (obstacleArray[i].type === "good"){
         var num = obstacleArray[i].id;
-        obstacleArray[i].status = true;
         var txt = num.toString();
         var removeElement = document.getElementById(txt);
         removeElement.remove();
         obstacleArray.splice(i,1);
+        player.collecteditems +=1;
+      }else if (obstacleArray[i].type === "safe"){
+        player.score += player.collecteditems;
+        var score = document.querySelector("#scorecounter")
+        score.innerText = "Your score is: "+player.score;
+        player.collecteditems = 0;
+      }
+    }
+  }
+  for (var j = 0; j < obstacleArray.length; j++){
+    if (obstacleArray[j].type === "good"){
+      for (var k = 0; k < obstacleArray.length; k++){
+        if ((obstacleArray[j].positionX+obstacleArray[j].width > obstacleArray[k].positionX) && (obstacleArray[j].positionX < obstacleArray[k].positionX+obstacleArray[k].width) && (obstacleArray[j].positionY+obstacleArray[j].height > obstacleArray[k].positionY) && (obstacleArray[j].positionY < obstacleArray[k].positionY+obstacleArray[k].height)){
+          if (obstacleArray[k].type === "boom" && obstacleArray[k].status===true){
+            console.log("boom!")
+            var num = obstacleArray[j].id;
+            var txt = num.toString();
+            var removeElement = document.getElementById(txt);
+            removeElement.remove();
+            obstacleArray.splice(j,1);
+          }
+        }
       }
     }
   }
 }
+setInterval(function(){
+  updatePlayerMove();
+  // updateObjectMove();
+  checkBorderCollision();
+  checkObjectCollision();
+  checkObjectBorderCollision();
+},10)
 
     // console.log(player.lastdirection);
     //check which direction player is accessing the obstacle from

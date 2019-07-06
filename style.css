@@ -19,11 +19,3 @@
   justify-content: center;
   align-items: center;
 }
-#animate{
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 20px;
-  width: 20px;
-  background-color: black;
-}
