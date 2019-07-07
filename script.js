@@ -50,25 +50,8 @@ var player = {
   width: 10,
   animaldeath: 0,
   color: "black",
-  lastdirection:null,
   collecteditems: 0,
   score: 0,
-  up:function (){
-    this.lastdirection = "up";
-    this.positionY -=5;
-  },
-  down: function(){
-    this.lastdirection = "down";
-    this.positionY +=5;
-  },
-  left:function (){
-    this.lastdirection = "left"
-    this.positionX -=5;
-  },
-  right: function(){
-    this.lastdirection = "right"
-    this.positionX +=5;
-  }
 }
 //define map
 var map = {
@@ -77,7 +60,7 @@ var map = {
   color: "brown",
   margin: "auto",
   position: "relative",
-  id: "gamearea"
+  id: "gamearea",
 }
 //generate map
 function generateMap(){
@@ -91,7 +74,7 @@ function generateMap(){
   gameMap.setAttribute("id", map.id);
   document.querySelector("#gamecontainer").appendChild(gameMap);
 }
-//generate button keys
+//generate button keys(for those who like to play games the hard way... good luck!)
 function generateButtonControl(){
   var btnContainer = document.createElement("div");
   btnContainer.setAttribute("id", "controls")
@@ -159,7 +142,7 @@ function generateButtonControl(){
   btnContainer.appendChild(rightDiv);
   document.querySelector("#game").appendChild(btnContainer);
 }
-//generate stat counter
+//generate stat counter on how many animals saved
 function generateStatCount(){
   var statCount = document.createElement("div");
   statCount.setAttribute("id", "scorecounter")
@@ -173,7 +156,7 @@ function generateStatCount(){
   statCount.innerText = "Your score is: Nothing so far";
   document.querySelector("#gamearea").appendChild(statCount);
 }
-//generate how many items you picked up
+//generate stats on how many items player picked up thus far
 function generateCarryCount(){
   var carryCount = document.createElement("div");
   carryCount.setAttribute("id", "carrycounter")
@@ -246,7 +229,7 @@ function generateBombardment(){
   bombsAway = setInterval(generateMultigeddon,1500)
   animalsAway = setInterval(generateCollectibles,3000)
 }
-//generate many bombs on map and clears previous
+//generate many bombs on map
 function generateMultigeddon(){
   var randNum = Math.floor(Math.random()*10)+1;
   for (var i = 0; i < randNum; i++){
@@ -466,7 +449,7 @@ function updateObjectMove(){
       var obj = document.getElementById(txt);
       obj.style.top = obstacleArray[i].positionY+"px";
       obj.style.left = obstacleArray[i].positionX+"px";
-      // obstacleArray[i]["type"] === "boom" || obstacleArray[i]["type"] === "good" &&
+      // move objects only if they have the status set to true. bombs will not continue moving once they have been set off
       if (obstacleArray[i]["movestatus"] === true){
         randomMovement(obj,obstacleArray[i])
       }
@@ -486,7 +469,7 @@ function checkBorderCollision(){
     player.positionY-=player.height;
   }
 }
-//checks if object is going out of play area
+//check if object is going out of play area
 function checkObjectBorderCollision(){
   for (var i = 0; i < obstacleArray.length; i++){
     var num = obstacleArray[i].id;
@@ -536,6 +519,7 @@ function checkObjectCollision(){
         document.querySelector("#carrycounter").innerText = `You are currently carrying ${player.collecteditems} animals`;
       }
     }
+    //checking if a sheep has been blown up by a bomb
     if (obstacleArray[i].type === "good"){
       for (var k = 0; k < obstacleArray.length; k++){
         if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[k].positionX) && (obstacleArray[i].positionX < obstacleArray[k].positionX+obstacleArray[k].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[k].positionY) && (obstacleArray[i].positionY < obstacleArray[k].positionY+obstacleArray[k].height)){
@@ -551,6 +535,7 @@ function checkObjectCollision(){
             player.animaldeath+=1;
             var death = document.querySelector("#deathcounter")
             death.innerText = `${player.animaldeath} animals have died!`;
+            //if too many animals died, game over
             if (player.animaldeath >= 10){
               clearInterval(stopGame);
               clearInterval(bombsAway);
@@ -563,6 +548,7 @@ function checkObjectCollision(){
     }
   }
 }
+//checks game state every 5ms
 var stopGame = setInterval(function(){
   move();
   updatePlayerMove();
@@ -622,6 +608,7 @@ function checkLoseState(){
     player.lose = false;
   }
 }
+//plays sound during object interactions
 function sound(gameObject){
   var sheepAudio = new Audio("sounds/sheep.wav")
   var sheepDeathAudio = new Audio("sounds/sheep-death.wav")
@@ -636,6 +623,7 @@ function sound(gameObject){
     sheepDeathAudio.play();
   }
 }
+//prevent arrow keys from scrolling down the page
 window.addEventListener("keydown", function(){
   if ([32,37,38,39,40].indexOf(event.keyCode) >-1){
     event.preventDefault();
