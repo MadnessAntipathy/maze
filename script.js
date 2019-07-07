@@ -353,6 +353,7 @@ function setBombToExplode (obj,gameObject){
 //explodes the bomb
 function expandBlast(obj,gameObject){
   gameObject.status = true;
+  sound(gameObject);
   var randNum = Math.floor(Math.random()*20)+5;
   var exploding = setInterval(expanding,20,obj, gameObject)
   var count = 0;
@@ -361,16 +362,16 @@ function expandBlast(obj,gameObject){
   obj.style.borderRadius="25";
   obj.style.zIndex="2";
   function expanding(obj, gameObject){
-      gameObject.movestatus=false;
-      gameObject.positionY-=1;
-      gameObject.positionX-=1;
-      gameObject.height+=2;
-      gameObject.width+=2;
-      obj.style.height = gameObject.height+"px";
-      obj.style.width = gameObject.width+"px";
-      obj.style.top = gameObject.positionY+"px";
-      obj.style.left = gameObject.positionX+"px";
-      count++;
+    gameObject.movestatus=false;
+    gameObject.positionY-=1;
+    gameObject.positionX-=1;
+    gameObject.height+=2;
+    gameObject.width+=2;
+    obj.style.height = gameObject.height+"px";
+    obj.style.width = gameObject.width+"px";
+    obj.style.top = gameObject.positionY+"px";
+    obj.style.left = gameObject.positionX+"px";
+    count++;
     if (count === randNum){
       clearInterval(exploding);
       setTimeout(removeDebris,1000,obj, gameObject)
@@ -517,6 +518,7 @@ function checkObjectCollision(){
         clearInterval(bombsAway);
         clearInterval(animalsAway);
       }else if (obstacleArray[i].type === "good"){
+        sound(obstacleArray[i])
         var num = obstacleArray[i].id;
         var txt = num.toString();
         var removeElement = document.getElementById(txt);
@@ -539,6 +541,8 @@ function checkObjectCollision(){
         if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[k].positionX) && (obstacleArray[i].positionX < obstacleArray[k].positionX+obstacleArray[k].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[k].positionY) && (obstacleArray[i].positionY < obstacleArray[k].positionY+obstacleArray[k].height)){
           if (obstacleArray[k].type === "boom" && obstacleArray[k].status===true){
             console.log("boom!")
+            obstacleArray[i].type = "dead";
+            sound(obstacleArray[i]);
             var num = obstacleArray[i].id;
             var txt = num.toString();
             var removeElement = document.getElementById(txt);
@@ -547,7 +551,7 @@ function checkObjectCollision(){
             player.animaldeath+=1;
             var death = document.querySelector("#deathcounter")
             death.innerText = `${player.animaldeath} animals have died!`;
-            if (player.animaldeath === 10){
+            if (player.animaldeath >= 10){
               clearInterval(stopGame);
               clearInterval(bombsAway);
               clearInterval(animalsAway);
@@ -559,9 +563,6 @@ function checkObjectCollision(){
     }
   }
 }
-
-
-
 var stopGame = setInterval(function(){
   move();
   updatePlayerMove();
@@ -573,7 +574,7 @@ var stopGame = setInterval(function(){
 },5)
 //check if game ends based on condtions: player got hit by bomb or if animal death count reaches 10
 function checkLoseState(){
-  if (player.lose === true || player.animaldeath === 10){
+  if (player.lose === true || player.animaldeath >= 10){
     document.querySelector("#gamearea").remove()
     document.querySelector("#controls").remove()
     var loseContainer = document.createElement("div");
@@ -619,6 +620,20 @@ function checkLoseState(){
     loseContainer.appendChild(tryAgain);
     document.querySelector("#pagecontent").appendChild(loseContainer);
     player.lose = false;
+  }
+}
+function sound(gameObject){
+  var sheepAudio = new Audio("sounds/sheep.wav")
+  var sheepDeathAudio = new Audio("sounds/sheep-death.wav")
+  var bombAudio = new Audio("sounds/explode.wav")
+  if (gameObject.type === "boom"){
+    bombAudio.play();
+  }
+  if (gameObject.type === "good"){
+    sheepAudio.play();
+  }
+  if (gameObject.type === "dead"){
+    sheepDeathAudio.play();
   }
 }
 window.addEventListener("keydown", function(){
