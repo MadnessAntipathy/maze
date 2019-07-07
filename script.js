@@ -2,6 +2,7 @@ console.log("Hello world")
 //define global variable
 function startGame(){
   document.querySelector("#startbutton").remove()
+  document.querySelector("#introtext").remove()
   generateMap()
   generateStatCount()
   generateCarryCount()
