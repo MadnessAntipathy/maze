@@ -5,6 +5,7 @@ function startGame(){
   generateMap()
   generateStatCount()
   generateCarryCount()
+  generateDeathCount()
   generateButtonControl()
   generateSafeHouse()
   generatePlayer()
@@ -12,12 +13,14 @@ function startGame(){
 }
 function restartGame(){
   player.collecteditems = 0;
+  player.animaldeath = 0;
   player.score = 0;
   obstacleArray = [];
   document.querySelector("#losecontainer").remove()
   generateMap()
   generateStatCount()
   generateCarryCount()
+  generateDeathCount()
   generateButtonControl()
   generateSafeHouse()
   generatePlayer()
@@ -27,7 +30,6 @@ function restartGame(){
     updatePlayerMove();
     updateObjectMove();
     checkBorderCollision();
-    checkAnimalDeath()
     checkObjectCollision();
     checkObjectBorderCollision();
     checkLoseState();
@@ -44,12 +46,13 @@ var player = {
   position: "absolute",
   positionX: null,
   positionY: null,
-  height: 10,
+  height: 20,
   width: 10,
+  animaldeath: 0,
   color: "black",
   lastdirection:null,
-  collecteditems: null,
-  score: null,
+  collecteditems: 0,
+  score: 0,
   up:function (){
     this.lastdirection = "up";
     this.positionY -=5;
@@ -93,8 +96,8 @@ function generateButtonControl(){
   btnContainer.setAttribute("id", "controls")
   btnContainer.style.height="100px";
   btnContainer.style.width="100px";
-  btnContainer.style.margin="auto";
-  btnContainer.style.display="flex";
+  btnContainer.style.margin="0 auto";
+  btnContainer.style.padding="0";
   btnContainer.style.justifyContent="center";
   btnContainer.style.alignItems="center";
   var btnUp = document.createElement("button");
@@ -105,7 +108,7 @@ function generateButtonControl(){
   btnUp.style.border="1px solid black"
   btnUp.style.height="20px";
   btnUp.style.width="50px";
-  btnUp.style.backgroundColor="red";
+  btnUp.style.backgroundColor="rgba(255,255,255,0.5)";
   btnUp.setAttribute("id","up")
   btnUp.setAttribute("onclick", "moveSetSecondary()");
   var btnDown = document.createElement("button");
@@ -116,7 +119,7 @@ function generateButtonControl(){
   btnDown.style.border="1px solid black"
   btnDown.style.height="20px";
   btnDown.style.width="50px";
-  btnDown.style.backgroundColor="red";
+  btnDown.style.backgroundColor="rgba(255,255,255,0.5)";
   btnDown.setAttribute("id","down")
   btnDown.setAttribute("onclick", "moveSetSecondary()");
   var btnLeft = document.createElement("button");
@@ -126,7 +129,7 @@ function generateButtonControl(){
   btnLeft.style.border="1px solid black"
   btnLeft.style.height="20px";
   btnLeft.style.width="50px";
-  btnLeft.style.backgroundColor="red";
+  btnLeft.style.backgroundColor="rgba(255,255,255,0.5)";
   btnLeft.setAttribute("id","left")
   btnLeft.setAttribute("onclick", "moveSetSecondary()");
   var btnRight = document.createElement("button");
@@ -136,7 +139,7 @@ function generateButtonControl(){
   btnRight.style.border="1px solid black"
   btnRight.style.height="20px";
   btnRight.style.width="50px";
-  btnRight.style.backgroundColor="red";
+  btnRight.style.backgroundColor="rgba(255,255,255,0.5)";
   btnRight.setAttribute("id","right")
   btnRight.setAttribute("onclick", "moveSetSecondary()");
   var leftDiv=document.createElement("div");
@@ -153,7 +156,7 @@ function generateButtonControl(){
   btnContainer.appendChild(leftDiv);
   btnContainer.appendChild(upDownDiv);
   btnContainer.appendChild(rightDiv);
-  document.body.appendChild(btnContainer);
+  document.querySelector("#game").appendChild(btnContainer);
 }
 //generate stat counter
 function generateStatCount(){
@@ -161,27 +164,41 @@ function generateStatCount(){
   statCount.setAttribute("id", "scorecounter")
   statCount.style.position = "absolute";
   statCount.style.top = "20px";
-  statCount.style.right = "20px";
+  statCount.style.left = "5px";
   statCount.style.height = "20px";
   statCount.style.width = "250px";
-  statCount.style.backgroundColor = "rgba(255,0,0,0.5)"
   statCount.style.color = "white";
+  statCount.style.zIndex = "2";
   statCount.innerText = "Your score is: Nothing so far";
   document.querySelector("#gamearea").appendChild(statCount);
 }
 //generate how many items you picked up
 function generateCarryCount(){
-  var statCount = document.createElement("div");
-  statCount.setAttribute("id", "carrycounter")
-  statCount.style.position = "absolute";
-  statCount.style.top = "40px";
-  statCount.style.right = "20px";
-  statCount.style.height = "20px";
-  statCount.style.width = "250px";
-  statCount.style.backgroundColor = "rgba(255,0,0,0.5)"
-  statCount.style.color = "white";
-  statCount.innerText = `You are carrying ZERO animals`;
-  document.querySelector("#gamearea").appendChild(statCount);
+  var carryCount = document.createElement("div");
+  carryCount.setAttribute("id", "carrycounter")
+  carryCount.style.position = "absolute";
+  carryCount.style.top = "40px";
+  carryCount.style.left = "5px";
+  carryCount.style.height = "20px";
+  carryCount.style.width = "250px";
+  carryCount.style.color = "white";
+  carryCount.style.zIndex = "2";
+  carryCount.innerText = `You are carrying ZERO animals`;
+  document.querySelector("#gamearea").appendChild(carryCount);
+}
+//generate how many animals have died
+function generateDeathCount(){
+  var deathCount = document.createElement("div");
+  deathCount.setAttribute("id", "deathcounter")
+  deathCount.style.position = "absolute";
+  deathCount.style.top = "60px";
+  deathCount.style.left = "5px";
+  deathCount.style.height = "20px";
+  deathCount.style.width = "250px";
+  deathCount.style.color = "white";
+  deathCount.style.zIndex = "2";
+  deathCount.innerText = `${player.animaldeath} animals have died`;
+  document.querySelector("#gamearea").appendChild(deathCount);
 }
 //generate player
 function generatePlayer(){
@@ -193,7 +210,7 @@ function generatePlayer(){
   play.style.width = player.width+"px";
   play.style.top = randNum+"px";
   play.style.left = randNum+"px";
-  play.style.backgroundColor = player.color;
+  play.style.backgroundImage = "url(images/human-black-10x20.png)";
   player.active = true;
   var mapping = document.querySelector("#gamearea");
   mapping.appendChild(play);
@@ -206,7 +223,7 @@ function generateSafeHouse(){
     width: 100,
     positionX: 200,
     positionY: 400,
-    color: "yellow",
+    color: "rgba(255,255,0,0.5)",
     type: "safe",
     id: "safehouse",
   }
@@ -218,15 +235,15 @@ function generateSafeHouse(){
   obj.style.width = safeHouse.width+"px";
   obj.style.top = safeHouse.positionY+"px";
   obj.style.left = safeHouse.positionX+"px";
-  obj.style.backgroundColor = safeHouse.color;
+  obj.style.backgroundImage = "url(images/barn-100x100.png)";
+  obj.style.zIndex = "2"
   var map = document.querySelector("#gamearea");
   map.appendChild(obj);
 }
 //the function that calls down the animals and bombs
-
 function generateBombardment(){
-  bombsAway = setInterval(generateMultigeddon,3000)
-  animalsAway = setInterval(generateCollectibles,300)
+  bombsAway = setInterval(generateMultigeddon,1500)
+  animalsAway = setInterval(generateCollectibles,3000)
 }
 //generate many bombs on map and clears previous
 function generateMultigeddon(){
@@ -244,8 +261,8 @@ function generateArmageddon(){
     class: "armageddon",
     positionX: randPosX,
     positionY: randPosY,
-    height: 10,
-    width: 10,
+    height: 17,
+    width: 8,
     status: false,
     color: "blue",
     id: randId,
@@ -262,7 +279,7 @@ function generateArmageddon(){
       obj.style.width = newObstacle.width+"px";
       obj.style.top = newObstacle.positionY+"px";
       obj.style.left = newObstacle.positionX+"px";
-      obj.style.backgroundColor = newObstacle.color;
+      obj.style.backgroundImage = "url(images/bomb-8x17.png)";
       var mapping = document.querySelector("#gamearea");
       mapping.appendChild(obj);
       obstacleArray.push(newObstacle);
@@ -277,7 +294,7 @@ function generateCollectibles(){
   var collectible = {
     position: "absolute",
     class: "collectible",
-    height: 10,
+    height: 18,
     width: 10,
     positionX: randPosX,
     positionY: randPosY,
@@ -297,7 +314,7 @@ function generateCollectibles(){
       obj.style.width = collectible.width+"px";
       obj.style.top = collectible.positionY+"px";
       obj.style.left = collectible.positionX+"px";
-      obj.style.backgroundColor = collectible.color;
+      obj.style.backgroundImage = "url(images/sheep-10x18.png)";
       var mapping = document.querySelector("#gamearea");
       mapping.appendChild(obj);
       obstacleArray.push(collectible);
@@ -494,6 +511,7 @@ function checkObjectCollision(){
         player.collecteditems +=1;
         var carry = document.querySelector("#carrycounter")
         carry.innerText = `You are currently carrying ${player.collecteditems} animals`;
+        break;
       }else if (obstacleArray[i].type === "safe"){
         player.score += player.collecteditems;
         player.collecteditems = 0;
@@ -512,6 +530,14 @@ function checkObjectCollision(){
             var removeElement = document.getElementById(txt);
             removeElement.remove();
             obstacleArray.splice(i,1);
+            player.animaldeath+=1;
+            var death = document.querySelector("#deathcounter")
+            death.innerText = `${player.animaldeath} animals have died!`;
+            if (player.animaldeath === 10){
+              clearInterval(stopGame);
+              clearInterval(bombsAway);
+              clearInterval(animalsAway);
+            }
             break;
           }
         }
@@ -519,25 +545,7 @@ function checkObjectCollision(){
     }
   }
 }
-//function to check if animal died during bombing
-function checkAnimalDeath(){
-//   for (var j = 0; j < obstacleArray.length; j++){
-//     if (obstacleArray[j].type === "good"){
-//       for (var k = 0; k < obstacleArray.length; k++){
-//         if ((obstacleArray[j].positionX+obstacleArray[j].width > obstacleArray[k].positionX) && (obstacleArray[j].positionX < obstacleArray[k].positionX+obstacleArray[k].width) && (obstacleArray[j].positionY+obstacleArray[j].height > obstacleArray[k].positionY) && (obstacleArray[j].positionY < obstacleArray[k].positionY+obstacleArray[k].height)){
-//           if (obstacleArray[k].type === "boom" && obstacleArray[k].status===true){
-//             console.log("boom!")
-//             var num = obstacleArray[j].id;
-//             var txt = num.toString();
-//             var removeElement = document.getElementById(txt);
-//             removeElement.remove();
-//             obstacleArray.splice(j,1);
-//           }
-//         }
-//       }
-//     }
-//   }
-}
+
 
 
 var stopGame = setInterval(function(){
@@ -545,31 +553,41 @@ var stopGame = setInterval(function(){
   updatePlayerMove();
   updateObjectMove();
   checkBorderCollision();
-  checkAnimalDeath()
   checkObjectCollision();
   checkObjectBorderCollision();
   checkLoseState();
 },5)
 
 function checkLoseState(){
-  if (player.lose === true){
-    player.lose = false;
+  if (player.lose === true || player.animaldeath === 10){
     document.querySelector("#gamearea").remove()
     document.querySelector("#controls").remove()
     var loseContainer = document.createElement("div");
     loseContainer.setAttribute("id","losecontainer")
     loseContainer.style.textAlign = "center"
+    loseContainer.style.display = "flex";
+    loseContainer.style.flexDirection = "column";
+    loseContainer.style.justifyContent = "center";
+    loseContainer.style.alignItems = "center";
     loseContainer.style.height = "300px";
-    loseContainer.style.width = "500px";
-    loseContainer.style.backgroundColor = "white";
+    loseContainer.style.width = "600px";
+    loseContainer.style.backgroundColor = "rgba(255,255,255,0.5)";
     loseContainer.style.margin = "auto";
     var lose = document.createElement("h1");
-    lose.innerText = "AHHHHH YOU DIED!!! Try again?";
     var stats = document.createElement("h2");
-    if (player.score === 0 ||player.score === null){
+    var death = document.createElement("h2");
+    if (player.lose === true){
+      lose.innerText = "AHHHHH YOU DIED!!! Try again?";
+    }else{
+      lose.innerText = "10 animals died!!! Try again?";
+    }
+    if (player.score === 0){
       stats.innerText = `You saved: ZERO animals! For shame!`
     }else{
       stats.innerText = `You saved: ${player.score} animals!`
+    }
+    if (player.animaldeath < 10){
+      death.innerText = `Animal Deaths: ${player.animaldeath}`
     }
     var tryAgain = document.createElement("button");
     tryAgain.type="button";
@@ -578,12 +596,14 @@ function checkLoseState(){
     tryAgain.style.border="1px solid black"
     tryAgain.style.height="20px";
     tryAgain.style.width="150px";
-    tryAgain.style.backgroundColor="red";
+    tryAgain.style.backgroundColor="rgba(255,255,255,0.5)";
     tryAgain.setAttribute("id","tryagain")
     tryAgain.setAttribute("onclick", "restartGame()");
     loseContainer.appendChild(lose);
     loseContainer.appendChild(stats);
+    loseContainer.appendChild(death);
     loseContainer.appendChild(tryAgain);
-    document.body.appendChild(loseContainer);
+    document.querySelector("#pagecontent").appendChild(loseContainer);
+    player.lose = false;
   }
 }
