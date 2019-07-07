@@ -37,6 +37,7 @@ function restartGame(){
     checkBorderCollision();
     checkObjectCollision();
     checkObjectBorderCollision();
+    checkLoseState();
   },5)
 }
 var bombsAway = null;
@@ -72,7 +73,6 @@ function generateMap(){
   gameMap.style.height = map.height+"px";
   gameMap.style.height = map.width+"px";
   gameMap.style.backgroundColor = map.color;
-  gameMap.style.overflow = "hidden";
   gameMap.style.margin = map.margin;
   gameMap.style.position = map.position;
   gameMap.style.backgroundImage = "url(images/dirt-500x500.png)";
@@ -195,7 +195,6 @@ function generatePlayer(){
   var play = document.createElement("div");
   play.id = "player"
   play.style.position = player.position;
-  play.style.zIndex = "1";
   play.style.height = player.height+"px";
   play.style.width = player.width+"px";
   play.style.top = randNum+"px";
@@ -233,7 +232,7 @@ function generateSafeHouse(){
 //the function that calls down the animals and bombs
 function generateBombardment(){
   bombsAway = setInterval(generateMultigeddon,1500)
-  animalsAway = setInterval(generateCollectibles,5000)
+  animalsAway = setInterval(generateCollectibles,3000)
 }
 //generate many bombs on map
 function generateMultigeddon(){
@@ -250,17 +249,16 @@ function generateArmageddon(){
     position: "absolute",
     class: "armageddon",
     positionX: randPosX,
-    positionY: 0,
-    dropY: randPosY,
+    positionY: randPosY,
     height: 17,
     width: 8,
     status: false,
     color: "blue",
     id: randId,
     type: "boom",
-    movestatus: false,
+    movestatus: true,
   }
-  if (randPosX%10!=0 || randPosY%10!=0 || randPosX+8>map.width || randPosY+17>map.height || ((randPosX+8>safeHouse.positionX) && (randPosX<safeHouse.positionX+safeHouse.width) && (randPosY+17>safeHouse.positionY) && (randPosY<safeHouse.positionY+safeHouse.height))){
+  if (randPosX%10!=0 || randPosY%10!=0 || randPosX+10>map.width || randPosY+10>map.height || ((randPosX+10>safeHouse.positionX) && (randPosX<safeHouse.positionX+safeHouse.width) && (randPosY+10>safeHouse.positionY) && (randPosY<safeHouse.positionY+safeHouse.height))){
       generateArmageddon();
     }else{
       var obj = document.createElement("div");
@@ -269,23 +267,13 @@ function generateArmageddon(){
       obj.style.position = newObstacle.position;
       obj.style.height = newObstacle.height+"px";
       obj.style.width = newObstacle.width+"px";
-      obj.style.top = 0+"px";
+      obj.style.top = newObstacle.positionY+"px";
       obj.style.left = newObstacle.positionX+"px";
-      obj.style.backgroundImage = "url(images/bomb2-8x17.png)";
-      var objShadow = document.createElement("div");
-      objShadow.style.position = newObstacle.position;
-      objShadow.style.height = "1px";
-      objShadow.style.width = "1px";
-      objShadow.style.zIndex = "0";
-      objShadow.style.top = randPosY+17+"px";
-      objShadow.style.left = randPosX+4+"px";
-      objShadow.style.backgroundImage = "url(images/shadow-19x8.png)";
-      objShadow.style.backgroundSize = "contain";
+      obj.style.backgroundImage = "url(images/bomb-8x17.png)";
       var mapping = document.querySelector("#gamearea");
-      mapping.appendChild(objShadow);
       mapping.appendChild(obj);
       obstacleArray.push(newObstacle);
-      dropDown(obj,newObstacle,objShadow);
+      setBombToExplode(obj,newObstacle);
     }
 }
 //generate collectible items
@@ -323,37 +311,6 @@ function generateCollectibles(){
       obstacleArray.push(collectible);
     }
 }
-//have the bombs drop from top of the map to their starting positions
-function dropDown(obj,newObstacle,objShadow){
-  var dropBomb = setInterval(dropping,10,obj,newObstacle);
-  function dropping(obj,newObstacle){
-    obj.style.top = newObstacle.positionY+"px";
-    if (newObstacle.positionY < newObstacle.dropY/3){
-      objShadow.style.width = "6px";
-      objShadow.style.height = "3px";
-      objShadow.style.top = newObstacle.dropY+15+"px";
-      objShadow.style.left = newObstacle.positionX+1+"px";
-    }else if(newObstacle.positionY < (newObstacle.dropY/3)*2){
-      objShadow.style.width = "12px";
-      objShadow.style.height = "6px";
-      objShadow.style.top = newObstacle.dropY+12+"px";
-      objShadow.style.left = newObstacle.positionX+-2+"px";
-    }else if (newObstacle.positionY < (newObstacle.dropY/5)*4){
-      objShadow.style.width = "19px";
-      objShadow.style.height = "8px";
-      objShadow.style.top = newObstacle.dropY+10+"px";
-      objShadow.style.left = newObstacle.positionX-5+"px";
-    }
-    if (newObstacle.positionY === newObstacle.dropY ){
-      clearInterval(dropBomb);
-      expandBlast(obj,newObstacle);
-      objShadow.remove();
-    }else{
-      newObstacle.positionY+=5;
-    }
-  }
-}
-
 //generate random movement for each object type
 function randomMovement(obj,gameObject){
   var randNum = Math.floor(Math.random()*4)
@@ -381,7 +338,7 @@ function setBombToExplode (obj,gameObject){
   var randNum = Math.floor(Math.random()*6000)+3000;
   var timeBomb = setTimeout(expandBlast, randNum, obj,gameObject);
 }
-//explodes the bomb, sets status to true so that if player or animal caught in blast, they will be destroyed
+//explodes the bomb
 function expandBlast(obj,gameObject){
   gameObject.status = true;
   sound(gameObject);
@@ -520,22 +477,20 @@ function checkBorderCollision(){
 //check if object is going out of play area
 function checkObjectBorderCollision(){
   for (var i = 0; i < obstacleArray.length; i++){
-    if (obstacleArray[i]["movestatus"] === true){
-      var num = obstacleArray[i].id;
-      var txt = num.toString();
-      var obj = document.getElementById(txt);
-      if (obstacleArray[i].positionX+obstacleArray[i].width > map.width){
-        obstacleArray[i].positionX-=obstacleArray[i].width;
-      }
-      if (obstacleArray[i].positionX<0){
-        obstacleArray[i].positionX+=obstacleArray[i].width;
-      }
-      if (obstacleArray[i].positionY<0){
-        obstacleArray[i].positionY+=obstacleArray[i].height;
-      }
-      if (obstacleArray[i].positionY+obstacleArray[i].height>map.width){
-        obstacleArray[i].positionY-=obstacleArray[i].height;
-      }
+    var num = obstacleArray[i].id;
+    var txt = num.toString();
+    var obj = document.getElementById(txt);
+    if (obstacleArray[i].positionX+obstacleArray[i].width > map.width){
+      obstacleArray[i].positionX-=obstacleArray[i].width;
+    }
+    if (obstacleArray[i].positionX<0){
+      obstacleArray[i].positionX+=obstacleArray[i].width;
+    }
+    if (obstacleArray[i].positionY<0){
+      obstacleArray[i].positionY+=obstacleArray[i].height;
+    }
+    if (obstacleArray[i].positionY+obstacleArray[i].height>map.width){
+      obstacleArray[i].positionY-=obstacleArray[i].height;
     }
   }
 }
@@ -547,7 +502,6 @@ function checkObjectCollision(){
         console.log("boom!")
         player.active = false;
         player.lose = true;
-        checkLoseState();
         clearInterval(stopGame);
         clearInterval(bombsAway);
         clearInterval(animalsAway);
@@ -570,7 +524,7 @@ function checkObjectCollision(){
         document.querySelector("#carrycounter").innerText = `You are currently carrying ${player.collecteditems} animals`;
       }
     }
-    //check if a sheep has been blown up by a bomb
+    //checking if a sheep has been blown up by a bomb
     if (obstacleArray[i].type === "good"){
       for (var k = 0; k < obstacleArray.length; k++){
         if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[k].positionX) && (obstacleArray[i].positionX < obstacleArray[k].positionX+obstacleArray[k].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[k].positionY) && (obstacleArray[i].positionY < obstacleArray[k].positionY+obstacleArray[k].height)){
@@ -588,7 +542,6 @@ function checkObjectCollision(){
             death.innerText = `${player.animaldeath} animals have died!`;
             //if too many animals died, game over
             if (player.animaldeath >= 10){
-              checkLoseState();
               clearInterval(stopGame);
               clearInterval(bombsAway);
               clearInterval(animalsAway);
@@ -608,6 +561,7 @@ var stopGame = setInterval(function(){
   checkBorderCollision();
   checkObjectCollision();
   checkObjectBorderCollision();
+  checkLoseState();
 },5)
 //check if game ends based on condtions: player got hit by bomb or if animal death count reaches 10
 function checkLoseState(){
