@@ -1,4 +1,6 @@
-console.log("Hello world")
+document.addEventListener("DOMContentLoaded", function(){
+  console.log("DOM Content Loaded!")
+});
 //define global variable
 function startGame(){
   document.querySelector("#startbutton").remove()
@@ -13,6 +15,8 @@ function startGame(){
   generateBombardment()
 }
 function restartGame(){
+  document.querySelector("#gamearea").remove()
+  document.querySelector("#controls").remove()
   player.collecteditems = 0;
   player.animaldeath = 0;
   player.score = 0;
@@ -562,10 +566,15 @@ var stopGame = setInterval(function(){
 //check if game ends based on condtions: player got hit by bomb or if animal death count reaches 10
 function checkLoseState(){
   if (player.lose === true || player.animaldeath >= 10){
-    document.querySelector("#gamearea").remove()
-    document.querySelector("#controls").remove()
+    // document.querySelector("#gamearea").remove()
+    // document.querySelector("#controls").remove()
     var loseContainer = document.createElement("div");
     loseContainer.setAttribute("id","losecontainer")
+    loseContainer.style.position = "absolute";
+    loseContainer.style.top = "50%";
+    loseContainer.style.left = "50%";
+    loseContainer.style.transform = "translate(-50%,-50%)";
+    loseContainer.style.zIndex = "4";
     loseContainer.style.textAlign = "center"
     loseContainer.style.display = "flex";
     loseContainer.style.flexDirection = "column";
@@ -605,7 +614,7 @@ function checkLoseState(){
     loseContainer.appendChild(stats);
     loseContainer.appendChild(death);
     loseContainer.appendChild(tryAgain);
-    document.querySelector("#pagecontent").appendChild(loseContainer);
+    document.body.appendChild(loseContainer);
     player.lose = false;
   }
 }
