@@ -87,6 +87,7 @@ function generateMap(){
   gameMap.style.backgroundColor = map.color;
   gameMap.style.margin = map.margin;
   gameMap.style.position = map.position;
+  gameMap.style.backgroundImage = "url(images/dirt-10x10.png)";
   gameMap.setAttribute("id", map.id);
   document.querySelector("#gamecontainer").appendChild(gameMap);
 }
@@ -168,7 +169,7 @@ function generateStatCount(){
   statCount.style.height = "20px";
   statCount.style.width = "250px";
   statCount.style.color = "white";
-  statCount.style.zIndex = "2";
+  statCount.style.zIndex = "3";
   statCount.innerText = "Your score is: Nothing so far";
   document.querySelector("#gamearea").appendChild(statCount);
 }
@@ -182,7 +183,7 @@ function generateCarryCount(){
   carryCount.style.height = "20px";
   carryCount.style.width = "250px";
   carryCount.style.color = "white";
-  carryCount.style.zIndex = "2";
+  carryCount.style.zIndex = "3";
   carryCount.innerText = `You are carrying ZERO animals`;
   document.querySelector("#gamearea").appendChild(carryCount);
 }
@@ -196,7 +197,7 @@ function generateDeathCount(){
   deathCount.style.height = "20px";
   deathCount.style.width = "250px";
   deathCount.style.color = "white";
-  deathCount.style.zIndex = "2";
+  deathCount.style.zIndex = "3";
   deathCount.innerText = `${player.animaldeath} animals have died`;
   document.querySelector("#gamearea").appendChild(deathCount);
 }
@@ -267,6 +268,7 @@ function generateArmageddon(){
     color: "blue",
     id: randId,
     type: "boom",
+    movestatus: true,
   }
   if (randPosX%10!=0 || randPosY%10!=0 || randPosX+10>map.width || randPosY+10>map.height || ((randPosX+10>safeHouse.positionX) && (randPosX<safeHouse.positionX+safeHouse.width) && (randPosY+10>safeHouse.positionY) && (randPosY<safeHouse.positionY+safeHouse.height))){
       generateArmageddon();
@@ -302,6 +304,7 @@ function generateCollectibles(){
     id: randId,
     status: false,
     type: "good",
+    movestatus: true,
   }
   if (randPosX%10!=0 || randPosY%10!=0 || randPosX+collectible.width>map.width || randPosY+collectible.height>map.height||((randPosX+10>safeHouse.positionX) && (randPosX<safeHouse.positionX+safeHouse.width) && (randPosY+10>safeHouse.positionY) && (randPosY<safeHouse.positionY+safeHouse.height))){
       generateCollectibles();
@@ -353,7 +356,12 @@ function expandBlast(obj,gameObject){
   var randNum = Math.floor(Math.random()*20)+5;
   var exploding = setInterval(expanding,20,obj, gameObject)
   var count = 0;
+  obj.style.backgroundImage="url(images/explode-15x20.png)"
+  obj.style.backgroundSize="cover";
+  obj.style.borderRadius="25";
+  obj.style.zIndex="2";
   function expanding(obj, gameObject){
+      gameObject.movestatus=false;
       gameObject.positionY-=1;
       gameObject.positionX-=1;
       gameObject.height+=2;
@@ -365,7 +373,12 @@ function expandBlast(obj,gameObject){
       count++;
     if (count === randNum){
       clearInterval(exploding);
-      setTimeout(removeDebris,200,obj, gameObject)
+      setTimeout(removeDebris,1000,obj, gameObject)
+      obj.style.backgroundImage="url(images/smoke-15x20.png)"
+      obj.style.backgroundSize="cover";
+      obj.style.borderRadius="25";
+      obj.style.zIndex="2";
+      gameObject.status = false;
     }
   }
 }
@@ -452,7 +465,8 @@ function updateObjectMove(){
       var obj = document.getElementById(txt);
       obj.style.top = obstacleArray[i].positionY+"px";
       obj.style.left = obstacleArray[i].positionX+"px";
-      if (obstacleArray[i]["type"] === "boom" || obstacleArray[i]["type"] === "good"){
+      // obstacleArray[i]["type"] === "boom" || obstacleArray[i]["type"] === "good" &&
+      if (obstacleArray[i]["movestatus"] === true){
         randomMovement(obj,obstacleArray[i])
       }
     }
@@ -557,7 +571,7 @@ var stopGame = setInterval(function(){
   checkObjectBorderCollision();
   checkLoseState();
 },5)
-
+//check if game ends based on condtions: player got hit by bomb or if animal death count reaches 10
 function checkLoseState(){
   if (player.lose === true || player.animaldeath === 10){
     document.querySelector("#gamearea").remove()
@@ -607,3 +621,8 @@ function checkLoseState(){
     player.lose = false;
   }
 }
+window.addEventListener("keydown", function(){
+  if ([32,37,38,39,40].indexOf(event.keyCode) >-1){
+    event.preventDefault();
+  }
+});
