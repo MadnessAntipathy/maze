@@ -23,17 +23,21 @@ function selectDifficulty(){
   easy.innerText = "Lamb Chop Easy";
   easy.style.backgroundColor="rgba(255,255,255,0.5)";
   easy.setAttribute("id", "easy");
-  easy.setAttribute("onclick", "setDifficulty()");
+  easy.addEventListener("click", setDifficulty);
+  easy.addEventListener("mouseover", changeColor);
+  easy.addEventListener("mouseout", changeBack);
   var normal = document.createElement("button");
   normal.type = "button";
   normal.style.textAlign = "center";
   normal.style.border = "1px solid black";
+  normal.innerText = "Normal";
   normal.style.height="20px";
   normal.style.width="150px";
-  normal.innerText = "Normal";
   normal.style.backgroundColor="rgba(255,255,255,0.5)";
   normal.setAttribute("id", "normal");
-  normal.setAttribute("onclick", "setDifficulty()");
+  normal.addEventListener("click", setDifficulty);
+  normal.addEventListener("mouseover", changeColor);
+  normal.addEventListener("mouseout", changeBack);
   var farmegeddon = document.createElement("button");
   farmegeddon.type = "button";
   farmegeddon.style.textAlign = "center";
@@ -43,12 +47,32 @@ function selectDifficulty(){
   farmegeddon.innerText = "Farmegeddon";
   farmegeddon.style.backgroundColor="rgba(255,255,255,0.5)";
   farmegeddon.setAttribute("id", "farmegeddon");
-  farmegeddon.setAttribute("onclick", "setDifficulty()");
+  farmegeddon.addEventListener("click", setDifficulty);
+  farmegeddon.addEventListener("mouseover", changeColor);
+  farmegeddon.addEventListener("mouseout", changeBack);
   difficulty.appendChild(text);
   difficulty.appendChild(easy);
   difficulty.appendChild(normal);
   difficulty.appendChild(farmegeddon);
   document.querySelector("#pagecontent").appendChild(difficulty);
+}
+//change color of difficulty option on mouseover
+function changeColor(){
+  var text = event.target;
+  if (text.id === "easy"){
+    text.style.backgroundColor = "rgba(255,255,0,0.5)";
+  }
+  if (text.id === "normal"){
+    text.style.backgroundColor = "rgba(0,255,0,0.5)";
+  }
+  if (text.id === "farmegeddon"){
+    text.style.backgroundColor = "rgba(255,0,0,0.5)";
+  }
+}
+//change color of difficulty option back to original
+function changeBack(){
+  var text = event.target;
+  text.style.backgroundColor = "rgba(255,255,255,0.5)";
 }
 function setDifficulty(){
   document.querySelector("#difficulty").remove();
@@ -65,6 +89,8 @@ function setDifficulty(){
     bombDropRate = 1000;
     animalGenRate = 1500;
   }
+  var siren = new Audio("sounds/air-raid.mp3")
+  siren.play();
   generateMap()
   generateOverallStats()
   generateSafeHouse()
@@ -84,6 +110,7 @@ function restartGame(){
   player.collecteditems = 0;
   player.animaldeath = 0;
   player.score = 0;
+  player.barnstate = 0;
   obstacleArray = [];
   selectDifficulty()
 }
@@ -110,6 +137,7 @@ var player = {
   color: "black",
   collecteditems: 0,
   score: 0,
+  barnstate: 0,
   up: function(){
     player.positionY-=2;
   },
@@ -253,52 +281,11 @@ function generateOverallStats(){
   statContainer.appendChild(carryCount);
   document.querySelector("#game").appendChild(statContainer);
 }
-
-//generate stat counter on how many animals saved
-// function generateStatCount(){
-//   var statCount = document.createElement("div");
-//   statCount.setAttribute("id", "scorecounter")
-//   statCount.style.position = "absolute";
-//   statCount.style.top = "20px";
-//   statCount.style.left = "5px";
-//   statCount.style.height = "20px";
-//   statCount.style.width = "250px";
-//   statCount.style.color = "white";
-//   statCount.style.zIndex = "3";
-//   statCount.innerText = "Your score is: Nothing so far";
-//   document.querySelector("#game").appendChild(statCount);
-// }
-// //generate stats on how many items player picked up thus far
-// function generateCarryCount(){
-//   var carryCount = document.createElement("div");
-//   carryCount.setAttribute("id", "carrycounter")
-//   carryCount.style.position = "absolute";
-//   carryCount.style.top = "40px";
-//   carryCount.style.left = "5px";
-//   carryCount.style.height = "20px";
-//   carryCount.style.width = "250px";
-//   carryCount.style.color = "white";
-//   carryCount.style.zIndex = "3";
-//   carryCount.innerText = `You are carrying ZERO animals`;
-//   document.querySelector("#game").appendChild(carryCount);
-// }
-// //generate how many animals have died
-// function generateDeathCount(){
-//   var deathCount = document.createElement("div");
-//   deathCount.setAttribute("id", "deathcounter")
-//   deathCount.style.position = "absolute";
-//   deathCount.style.top = "60px";
-//   deathCount.style.left = "5px";
-//   deathCount.style.height = "20px";
-//   deathCount.style.width = "250px";
-//   deathCount.style.color = "white";
-//   deathCount.style.zIndex = "3";
-//   deathCount.innerText = `${player.animaldeath} animals have died`;
-//   document.querySelector("#game").appendChild(deathCount);
-// }
 //generate player
 function generatePlayer(){
   var randNum = Math.floor(Math.random()*map.width);
+  player.positionX = randNum;
+  player.positionY = randNum;
   var play = document.createElement("div");
   play.id = "player"
   play.style.position = player.position;
@@ -333,7 +320,7 @@ function generateSafeHouse(){
   obj.style.width = safeHouse.width+"px";
   obj.style.top = safeHouse.positionY+"px";
   obj.style.left = safeHouse.positionX+"px";
-  obj.style.backgroundImage = "url(images/barn2-100x100.png)";
+  obj.style.backgroundImage = "url(images/barn3-100x100.png)";
   obj.style.zIndex = "2"
   var map = document.querySelector("#gamearea");
   map.appendChild(obj);
@@ -651,6 +638,17 @@ function checkObjectCollision(){
         var score = document.querySelector("#scorecounter")
         score.innerText = `Your score is: ${player.score}`;
         document.querySelector("#carrycounter").innerText = `You are currently carrying ${player.collecteditems} animals`;
+        if (player.score>0 && player.barnstate === 0){
+          var sheep = document.createElement("div");
+          sheep.style.position = "absolute";
+          sheep.style.height = "18px";
+          sheep.style.width = "10px";
+          sheep.style.top = "82px";
+          sheep.style.left = "50px";
+          sheep.style.backgroundImage = "url(images/sheep-10x18.png)";
+          document.querySelector("#safehouse").appendChild(sheep)
+          player.barnstate = 1;
+        }
       }
     }
     //check if a sheep has been blown up by a bomb
@@ -680,7 +678,6 @@ function checkObjectCollision(){
     }
   }
 }
-
 //check if game ends based on condtions: player got hit by bomb or if animal death count reaches 10
 function checkLoseState(){
   if (player.lose === true || player.animaldeath >= player.animaldeathlimit){
@@ -742,6 +739,7 @@ function sound(gameObject){
   var sheepAudio = new Audio("sounds/sheep.wav")
   var sheepDeathAudio = new Audio("sounds/sheep-death.wav")
   var bombAudio = new Audio("sounds/explode.wav")
+
   if (gameObject.type === "boom"){
     bombAudio.play();
   }
