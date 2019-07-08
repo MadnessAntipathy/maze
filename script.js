@@ -78,16 +78,13 @@ function setDifficulty(){
   document.querySelector("#difficulty").remove();
   var difficulty = event.target.id;
   if (difficulty === "easy"){
-    bombDropRate = 3000;
-    animalGenRate = 3000;
+    dropRate = 300;
   }
   if (difficulty === "normal"){
-    bombDropRate = 1500;
-    animalGenRate = 3000;
+    dropRate = 200;
   }
   if (difficulty === "farmegeddon"){
-    bombDropRate = 1000;
-    animalGenRate = 1500;
+    dropRate = 100;
   }
   var siren = new Audio("sounds/air-raid.mp3")
   siren.play();
@@ -95,12 +92,16 @@ function setDifficulty(){
   generateOverallStats()
   generateSafeHouse()
   generatePlayer()
-  generateBombardment()
-  //checks game state every 10ms
+  //checks game state every 10ms - the global clock
   stopGame = setInterval(function(){
     move();
     updateObjectMove();
     checkObjectCollision();
+    if (globalCounter % dropRate === 0 && globalCounter != 0){
+      generateMultigeddon();
+      generateCollectibles();
+    }
+    globalCounter++;
   },10)
 }
 function restartGame(){
@@ -115,16 +116,16 @@ function restartGame(){
   selectDifficulty()
 }
 //global variables defined
-var bombsAway = null;
-var animalsAway = null;
 var obstacleArray = [];
 var safeHouse = null;
 var stopGame;
+var globalCounter = 0;
 //define player variable
 var player = {
-  active: false,
+  active: false, //whether player is generated in game
   lose: false,
-  movestatus: true,
+  movestatus: true, //whether player can move
+  livestatus: null,
   id: "player",
   type: "player",
   position: "absolute",
@@ -325,11 +326,6 @@ function generateSafeHouse(){
   var map = document.querySelector("#gamearea");
   map.appendChild(obj);
 }
-//the function that calls down the animals and bombs
-function generateBombardment(){
-  bombsAway = setInterval(generateMultigeddon,bombDropRate)
-  animalsAway = setInterval(generateCollectibles,animalGenRate)
-}
 //generate many bombs on map
 function generateMultigeddon(){
   var randNum = Math.floor(Math.random()*10)+1;
@@ -344,8 +340,9 @@ function generateArmageddon(){
   var newObstacle = {
     id: randId,
     type: "boom",
-    movestatus: false,
-    status: false,
+    movestatus: false, //whether bomb can move
+    livestatus: false, //drop state of the object
+    explodestatus: false, //whether object is in kill switch
     position: "absolute",
     class: "armageddon",
     positionX: randPosX,
@@ -354,6 +351,20 @@ function generateArmageddon(){
     height: 17,
     width: 8,
     color: "blue",
+    counter: 0, //count down to end of explosion
+  }
+  var newShadow = {
+    id: randId*randId,
+    type: "shadow",
+    status: false, //check if shadow has finished showing
+    position: "absolute",
+    positionX: randPosX,
+    positionY: randPosY,
+    height: 1,
+    width: 1,
+    color: "black",
+    zIndex: 0,
+    counter: 0, //count down till explosion
   }
   if (randPosX%10!=0 || randPosY%10!=0 || randPosX+newObstacle.width>map.width || randPosY+newObstacle.height>map.height || ((randPosX+newObstacle.width>safeHouse.positionX) && (randPosX<safeHouse.positionX+safeHouse.width) && (randPosY+newObstacle.height>safeHouse.positionY) && (randPosY<safeHouse.positionY+safeHouse.height))){
       generateArmageddon();
@@ -369,19 +380,19 @@ function generateArmageddon(){
       obj.style.left = newObstacle.positionX+"px";
       obj.style.backgroundImage = "url(images/bomb2-8x17.png)";
       var objShadow = document.createElement("div");
+      objShadow.setAttribute("id", newShadow.id);
       objShadow.style.position = newObstacle.position;
-      objShadow.style.height = "1px";
-      objShadow.style.width = "1px";
-      objShadow.style.zIndex = "0";
-      objShadow.style.top = randPosY+newObstacle.height+"px";
-      objShadow.style.left = randPosX+(newObstacle.width/2)+"px";
-      objShadow.style.backgroundImage = "url(images/shadow-19x8.png)";
-      objShadow.style.backgroundSize = "contain";
+      objShadow.style.height = newShadow.height+"px";
+      objShadow.style.width = newShadow.width+"px";
+      objShadow.style.zIndex = newShadow.zIndex;
+      objShadow.style.top = newShadow.positionY+newObstacle.height+"px";
+      objShadow.style.left = newShadow.positionX+(newObstacle.width/2)+"px";
+      objShadow.style.backgroundColor = newShadow.color;
       var mapping = document.querySelector("#gamearea");
       mapping.appendChild(objShadow);
       mapping.appendChild(obj);
       obstacleArray.push(newObstacle);
-      dropDown(obj,newObstacle,objShadow);
+      obstacleArray.push(newShadow);
     }
 }
 //generate collectible items
@@ -393,7 +404,8 @@ function generateCollectibles(){
     id: randId,
     type: "good",
     status: false,
-    movestatus: true,
+    movestatus: true, //whether object can move
+    livestatus: false, //whether object is in follow mode
     position: "absolute",
     class: "collectible",
     height: 18,
@@ -401,6 +413,7 @@ function generateCollectibles(){
     positionX: randPosX,
     positionY: randPosY,
     color: "green",
+    statuscollected: false,
   }
   if (randPosX%10!=0 || randPosY%10!=0 || randPosX+collectible.width>map.width || randPosY+collectible.height>map.height||((randPosX+collectible.width>safeHouse.positionX) && (randPosX<safeHouse.positionX+safeHouse.width) && (randPosY+collectible.height>safeHouse.positionY) && (randPosY<safeHouse.positionY+safeHouse.height))){
       generateCollectibles();
@@ -420,36 +433,76 @@ function generateCollectibles(){
     }
 }
 //have the bombs drop from top of the map to their starting positions
-function dropDown(obj,newObstacle,objShadow){
-  var dropBomb = setInterval(dropping,5,obj,newObstacle);
-  function dropping(obj,newObstacle){
-    obj.style.top = newObstacle.positionY+"px";
-    if (newObstacle.positionY < newObstacle.dropY/3){
-      objShadow.style.width = "6px";
-      objShadow.style.height = "3px";
-      objShadow.style.top = newObstacle.dropY+15+"px";
-      objShadow.style.left = newObstacle.positionX+1+"px";
-    }else if(newObstacle.positionY < (newObstacle.dropY/3)*2){
-      objShadow.style.width = "12px";
-      objShadow.style.height = "6px";
-      objShadow.style.top = newObstacle.dropY+12+"px";
-      objShadow.style.left = newObstacle.positionX+-2+"px";
-    }else if (newObstacle.positionY < (newObstacle.dropY/5)*4){
-      objShadow.style.width = "19px";
-      objShadow.style.height = "8px";
-      objShadow.style.top = newObstacle.dropY+10+"px";
-      objShadow.style.left = newObstacle.positionX-5+"px";
+function dropping(obj,newObstacle){
+  if (newObstacle.positionY === newObstacle.dropY ){
+    newObstacle.livestatus = true;
+    sound(newObstacle);
+    exploding(obj,newObstacle);
+    // objShadow.remove();
+  }else{
+    newObstacle.positionY+=5;
+  }
+}
+//explodes the bomb, sets status to true so that if player or animal caught in blast, they will be destroyed
+function exploding(obj, gameObject){
+  gameObject.explodestatus = true;
+  var randNum = Math.floor(Math.random()*20)+5;
+  obj.style.backgroundImage="url(images/explode-15x20.png)"
+  obj.style.backgroundSize="cover";
+  obj.style.borderRadius="25";
+  obj.style.zIndex="2";
+  gameObject.positionY-=1;
+  gameObject.positionX-=1;
+  gameObject.height+=2;
+  gameObject.width+=2;
+  obj.style.height = gameObject.height+"px";
+  obj.style.width = gameObject.width+"px";
+  obj.style.top = gameObject.positionY+"px";
+  obj.style.left = gameObject.positionX+"px";
+  gameObject.counter++;
+  if (gameObject.counter >= randNum){
+    gameObject.explodestatus = false;
+    setTimeout(removeDebris,1000,obj, gameObject)
+    obj.style.backgroundImage="url(images/smoke-15x20.png)"
+    obj.style.backgroundSize="cover";
+    obj.style.borderRadius="25";
+    obj.style.zIndex="2";
+  }
+}
+//forms shadows below objects
+function shadowForm(obj, gameObject){
+  obj.style.width = gameObject.width+"px";
+  obj.style.height = gameObject.height+"px";
+  if (gameObject.counter > (gameObject.positionY/3)*2){
+    if (gameObject.width < 15){
+      gameObject.width+=2;
+      gameObject.positionX--;
     }
-    if (newObstacle.positionY === newObstacle.dropY ){
-      clearInterval(dropBomb);
-      expandBlast(obj,newObstacle);
-      objShadow.remove();
-    }else{
-      newObstacle.positionY+=5;
+    if (gameObject.height < 2){
+      gameObject.height++
+      gameObject.positionY+=3
+    }
+  }
+  gameObject.counter+=5
+  if (gameObject.counter >= gameObject.positionY){
+    gameObject.status = true;
+    for (var i = 0; i < obstacleArray.length; i ++){
+      if (obstacleArray[i]["id"] === gameObject.id){
+        obstacleArray.splice(i,1);
+        obj.remove();
+      }
     }
   }
 }
-
+//clear bomb elements after explosion
+function removeDebris(obj, gameObject){
+  for (var i = 0; i < obstacleArray.length; i ++){
+    if (obstacleArray[i]["id"] === gameObject.id){
+        obstacleArray.splice(i,1);
+        obj.remove();
+    }
+  }
+}
 //generate random movement for each object type
 function randomMovement(obj,gameObject){
   var randNum = Math.floor(Math.random()*4)
@@ -472,51 +525,19 @@ function randomMovement(obj,gameObject){
     break;
   }
 }
-//function to explode bomb when landed
-function setBombToExplode (obj,gameObject){
-  var randNum = Math.floor(Math.random()*6000)+3000;
-  var timeBomb = setTimeout(expandBlast, randNum, obj,gameObject);
-}
-//explodes the bomb, sets status to true so that if player or animal caught in blast, they will be destroyed
-function expandBlast(obj,gameObject){
-  gameObject.status = true;
-  sound(gameObject);
-  var randNum = Math.floor(Math.random()*20)+5;
-  var exploding = setInterval(expanding,10,obj, gameObject)
-  var count = 0;
-  obj.style.backgroundImage="url(images/explode-15x20.png)"
-  obj.style.backgroundSize="cover";
-  obj.style.borderRadius="25";
-  obj.style.zIndex="2";
-  function expanding(obj, gameObject){
-    gameObject.movestatus=false;
-    gameObject.positionY-=1;
-    gameObject.positionX-=1;
-    gameObject.height+=2;
-    gameObject.width+=2;
-    obj.style.height = gameObject.height+"px";
-    obj.style.width = gameObject.width+"px";
-    obj.style.top = gameObject.positionY+"px";
-    obj.style.left = gameObject.positionX+"px";
-    count++;
-    if (count === randNum){
-      clearInterval(exploding);
-      setTimeout(removeDebris,1000,obj, gameObject)
-      obj.style.backgroundImage="url(images/smoke-15x20.png)"
-      obj.style.backgroundSize="cover";
-      obj.style.borderRadius="25";
-      obj.style.zIndex="2";
-      gameObject.status = false;
-    }
+//generate follow command for sheep based on player position
+function followMovement(obj,gameObject){
+  if (gameObject.positionX > player.positionX){
+    gameObject.positionX--;
   }
-}
-//clear bomb elements after explosion
-function removeDebris(obj, gameObject){
-  for (var i = 0; i < obstacleArray.length; i ++){
-    if (obstacleArray[i]["id"] === gameObject.id){
-        obstacleArray.splice(i,1);
-        obj.remove();
-    }
+  if (gameObject.positionX < player.positionX){
+    gameObject.positionX++;
+  }
+  if (gameObject.positionY < player.positionY){
+    gameObject.positionY++;
+  }
+  if (gameObject.positionY > player.positionY){
+    gameObject.positionY--;
   }
 }
 //movement for player using arrow keys
@@ -588,8 +609,16 @@ function updateObjectMove(){
       obj.style.top = obstacleArray[i].positionY+"px";
       obj.style.left = obstacleArray[i].positionX+"px";
       // move objects only if they have the status set to true. bombs will not continue moving once they have been set off
-      if (obstacleArray[i]["movestatus"] === true && obstacleArray[i]["type"] === "good"){
-        randomMovement(obj,obstacleArray[i])
+      if (obstacleArray[i]["type"] === "good" && obstacleArray[i]["movestatus"] === true && obstacleArray[i]["livestatus"] === false){
+        randomMovement(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "good" && obstacleArray[i]["movestatus"] === true && obstacleArray[i]["livestatus"] === true){
+        followMovement(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "boom" && obstacleArray[i]["livestatus"] === false && obstacleArray[i]["explodestatus"] === false){
+        dropping(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "boom" && obstacleArray[i]["livestatus"] === true && obstacleArray[i]["explodestatus"] === true){
+        exploding(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "shadow" && obstacleArray[i]["status"] === false){
+        shadowForm(obj,obstacleArray[i]);
       }
     }
   }
@@ -616,60 +645,94 @@ function checkObjectCollision(){
       }
     }
     if ((player.positionX+player.width > obstacleArray[i].positionX) && (player.positionX < obstacleArray[i].positionX+obstacleArray[i].width) && (player.positionY+player.height > obstacleArray[i].positionY) && (player.positionY < obstacleArray[i].positionY+obstacleArray[i].height)){
-      if (obstacleArray[i].type === "boom" && obstacleArray[i].status===true){
+      if (obstacleArray[i].type === "good" && obstacleArray[i].statuscollected === false){
+        sound(obstacleArray[i])
+        obstacleArray[i]["livestatus"] = true; //sheep will start following player now
+        obstacleArray[i].statuscollected = true;
+        player.collecteditems +=1;
+        var carry = document.querySelector("#carrycounter")
+        carry.innerText = `You are currently carrying ${player.collecteditems} animals`;
+      }else if (obstacleArray[i].type === "boom" && obstacleArray[i].explodestatus===true){
         console.log("boom!")
         player.active = false;
         player.lose = true;
         checkLoseState();
-      }else if (obstacleArray[i].type === "good"){
-        sound(obstacleArray[i])
-        var num = obstacleArray[i].id;
-        var txt = num.toString();
-        var removeElement = document.getElementById(txt);
-        removeElement.remove();
-        obstacleArray.splice(i,1);
-        player.collecteditems +=1;
-        var carry = document.querySelector("#carrycounter")
-        carry.innerText = `You are currently carrying ${player.collecteditems} animals`;
-        break;
-      }else if (obstacleArray[i].type === "safe"){
-        player.score += player.collecteditems;
-        player.collecteditems = 0;
-        var score = document.querySelector("#scorecounter")
-        score.innerText = `Your score is: ${player.score}`;
-        document.querySelector("#carrycounter").innerText = `You are currently carrying ${player.collecteditems} animals`;
-        if (player.score>0 && player.barnstate === 0){
-          var sheep = document.createElement("div");
-          sheep.style.position = "absolute";
-          sheep.style.height = "18px";
-          sheep.style.width = "10px";
-          sheep.style.top = "82px";
-          sheep.style.left = "50px";
-          sheep.style.backgroundImage = "url(images/sheep-10x18.png)";
-          document.querySelector("#safehouse").appendChild(sheep)
-          player.barnstate = 1;
+      }
+    }
+
+    //check if a sheep has been blown up by a bomb or bumps into another sheep or has ben deposited into the barn
+    if (obstacleArray[i].type === "boom" && obstacleArray[i].explodestatus===true){
+      for (var k = 0; k < obstacleArray.length; k++){
+        if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[k].positionX) && (obstacleArray[i].positionX < obstacleArray[k].positionX+obstacleArray[k].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[k].positionY) && (obstacleArray[i].positionY < obstacleArray[k].positionY+obstacleArray[k].height)){
+          if (obstacleArray[k].type === "good"){
+            if (obstacleArray[k].livestatus === true){
+              player.collecteditems-=1;
+              document.querySelector("#carrycounter").innerText = `You are currently carrying ${player.collecteditems} animals`;
+            }
+            console.log("boom!")
+            obstacleArray[k].type = "dead";
+            sound(obstacleArray[k]);
+            var num = obstacleArray[k].id;
+            var txt = num.toString();
+            var removeElement = document.getElementById(txt);
+            removeElement.remove();
+            obstacleArray.splice(k,1);
+            player.animaldeath+=1;
+            //if too many animals died, game over
+            if (player.animaldeath >= player.animaldeathlimit){
+              checkLoseState();
+            }
+            var death = document.querySelector("#deathcounter")
+            death.innerText = `${player.animaldeath} animals have died!`;
+            break;
+          }
         }
       }
     }
-    //check if a sheep has been blown up by a bomb
-    if (obstacleArray[i].type === "good"){
-      for (var k = 0; k < obstacleArray.length; k++){
-        if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[k].positionX) && (obstacleArray[i].positionX < obstacleArray[k].positionX+obstacleArray[k].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[k].positionY) && (obstacleArray[i].positionY < obstacleArray[k].positionY+obstacleArray[k].height)){
-          if (obstacleArray[k].type === "boom" && obstacleArray[k].status===true){
-            console.log("boom!")
-            obstacleArray[i].type = "dead";
-            sound(obstacleArray[i]);
+    if (obstacleArray[i].type === "good" && obstacleArray[i].livestatus === true){
+      for (var j = 0; j < obstacleArray.length; j++){
+        if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[j].positionX) && (obstacleArray[i].positionX < obstacleArray[j].positionX+obstacleArray[j].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[j].positionY) && (obstacleArray[i].positionY < obstacleArray[j].positionY+obstacleArray[j].height)){
+          if (obstacleArray[j].type === "good" && obstacleArray[j].livestatus===true){
+            var randBump = Math.floor(Math.random()*4);
+            switch (randBump){
+              case 0:
+                obstacleArray[i].positionY-=obstacleArray[i].height;
+                obstacleArray[j].positionY+=obstacleArray[j].height;
+              break;
+              case 1:
+                obstacleArray[i].positionY+=obstacleArray[i].height;
+                obstacleArray[j].positionY-=obstacleArray[j].height;
+              break;
+              case 2:
+                obstacleArray[i].positionX+=obstacleArray[i].width;
+                obstacleArray[j].positionX-=obstacleArray[j].width;
+              break;
+              case 3:
+                obstacleArray[i].positionX-=obstacleArray[i].width;
+                obstacleArray[j].positionX+=obstacleArray[j].width;
+              break;
+            }
+          }
+          if (obstacleArray[j].type === "safe"){
+            player.score ++;
+            player.collecteditems--;
+            document.querySelector("#scorecounter").innerText = `Your score is: ${player.score}`;
+            document.querySelector("#carrycounter").innerText = `You are currently carrying ${player.collecteditems} animals`;
             var num = obstacleArray[i].id;
             var txt = num.toString();
             var removeElement = document.getElementById(txt);
             removeElement.remove();
             obstacleArray.splice(i,1);
-            player.animaldeath+=1;
-            var death = document.querySelector("#deathcounter")
-            death.innerText = `${player.animaldeath} animals have died!`;
-            //if too many animals died, game over
-            if (player.animaldeath >= player.animaldeathlimit){
-              checkLoseState();
+            if (player.score>0 && player.barnstate === 0){
+              var sheep = document.createElement("div");
+              sheep.style.position = "absolute";
+              sheep.style.height = "18px";
+              sheep.style.width = "10px";
+              sheep.style.top = "82px";
+              sheep.style.left = "50px";
+              sheep.style.backgroundImage = "url(images/sheep-10x18.png)";
+              document.querySelector("#safehouse").appendChild(sheep)
+              player.barnstate = 1;
             }
             break;
           }
@@ -682,8 +745,6 @@ function checkObjectCollision(){
 function checkLoseState(){
   if (player.lose === true || player.animaldeath >= player.animaldeathlimit){
     clearInterval(stopGame);
-    clearInterval(bombsAway);
-    clearInterval(animalsAway);
     var loseContainer = document.createElement("div");
     loseContainer.setAttribute("id","losecontainer")
     loseContainer.style.position = "absolute";
@@ -739,7 +800,6 @@ function sound(gameObject){
   var sheepAudio = new Audio("sounds/sheep.wav")
   var sheepDeathAudio = new Audio("sounds/sheep-death.wav")
   var bombAudio = new Audio("sounds/explode.wav")
-
   if (gameObject.type === "boom"){
     bombAudio.play();
   }
