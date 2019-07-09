@@ -309,7 +309,7 @@ function generateSheepDog(){
   var dirArray = ["up","down","left","right"]
   var dirNum = Math.floor(Math.random()*dirArray.length);
   var sheepDog = {
-    id : "sheepdog",
+    id : randNum*randPosX*randPosY,
     position : "absolute",
     type: "dog",
     engagestatus: false, //start to collect animal
@@ -325,6 +325,7 @@ function generateSheepDog(){
     directionstate: dirArray[dirNum],
     resetdirectionstate: false,
     animalarray:[],
+    caughtby:[],
     housearray:[],
     newdirection: function(){
       var randNumDirection = Math.floor(Math.random()*4);
@@ -482,6 +483,7 @@ function generateCollectibles(){
     positionX: randPosX,
     positionY: randPosY,
     color: "green",
+    caughtby: [],
     statuscollected: false, //whether sheep has been collected by player
     directionstate: dirArray[dirNum],
     resetdirectionstate: false,
@@ -647,6 +649,25 @@ function followMovement(obj,gameObject){
     }
   }
 }
+//to follow the dog
+function followDogMovement(obj,gameObject){
+  var a = (gameObject.positionX-gameObject.caughtby.positionX)*(gameObject.positionX-gameObject.caughtby.positionX)
+  var b = (gameObject.positionY-gameObject.caughtby.positionY)*(gameObject.positionY-gameObject.caughtby.positionY)
+  if (Math.abs(a)+Math.abs(b)>10){
+    if (gameObject.positionX > gameObject.caughtby.positionX){
+      gameObject.positionX--;
+    }
+    if (gameObject.positionX < gameObject.caughtby.positionX){
+      gameObject.positionX++;
+    }
+    if (gameObject.positionY < gameObject.caughtby.positionY){
+      gameObject.positionY++;
+    }
+    if (gameObject.positionY > gameObject.caughtby.positionY){
+      gameObject.positionY--;
+    }
+  }
+}
 //targets sheep and puts it in the sheepdog's target array returns sheep if it has one
 function targetAnimal(obj,gameObject){
   for (var i = 0; i < obstacleArray.length; i++){
@@ -658,13 +679,11 @@ function targetAnimal(obj,gameObject){
 }
 //sheepdog to target the house to deposit the animal
 function targetHouse(obj,gameObject){
-  console.log("housetarget")
   for (var i = 0; i < obstacleArray.length; i++){
     if (obstacleArray[i].type === "safe"){
       gameObject.housearray = obstacleArray[i];
       gameObject.engagestatus = true;
       gameObject.busystatus = true;
-      console.log("house targetted")
     }
   }
 }
@@ -691,7 +710,8 @@ function collectAnimal(obj,gameObject){
     gameObject.busystatus = false;
     gameObject.animalarray.livestatus = true;
     gameObject.animalarray.following = "dog"
-    gameObject.animalarray = [];
+    gameObject.animalarray.caughtby = gameObject;
+    // gameObject.animalarray = [];
   }
   //call off the hunt
   if (!((gameObject.positionX+gameObject.width > gameObject.animalarray.positionX) && (gameObject.positionX < gameObject.animalarray.positionX+gameObject.animalarray.width) && (gameObject.positionY+gameObject.height > gameObject.animalarray.positionY) && (gameObject.positionY < gameObject.animalarray.positionY+gameObject.animalarray.height)) && gameObject.animalarray.livestatus === true){
@@ -717,6 +737,11 @@ function depositAnimal(obj,gameObject){
     if (gameObject.positionY > gameObject.housearray.positionY+(gameObject.housearray.height/2)){
       gameObject.positionY--;
     }
+  }
+  if (gameObject.animalarray.livestatus === "released"){
+    gameObject.engagestatus = false;
+    gameObject.busystatus = false;
+    gameObject.animalarray = [];
   }
 }
 //movement for player using arrow keys
@@ -835,6 +860,7 @@ function checkObjectCollision(){
         obstacleArray[i].positionY-=obstacleArray[i].height;
       }
     }
+    //if player contacts with any of the animals, or bombs
     if ((player.positionX+player.width > obstacleArray[i].positionX) && (player.positionX < obstacleArray[i].positionX+obstacleArray[i].width) && (player.positionY+player.height > obstacleArray[i].positionY) && (player.positionY < obstacleArray[i].positionY+obstacleArray[i].height)){
       if (obstacleArray[i].type === "good" && obstacleArray[i].statuscollected === false){
         sound(obstacleArray[i])
@@ -847,13 +873,11 @@ function checkObjectCollision(){
       }else if(obstacleArray[i].type === "dog"){
          obstacleArray[i].movestatus = false;
       }else if (obstacleArray[i].type === "boom" && obstacleArray[i].explodestatus===true){
-        console.log("boom!")
         player.active = false;
         player.lose = true;
         checkLoseState();
       }
     }
-
     //check if a sheep has been blown up by a bomb
     if (obstacleArray[i].type === "boom" && obstacleArray[i].explodestatus===true){
       for (var k = 0; k < obstacleArray.length; k++){
@@ -863,7 +887,6 @@ function checkObjectCollision(){
               player.collecteditems-=1;
               document.querySelector("#carrycounter").innerText = `You are currently carrying ${player.collecteditems} animals`;
             }
-            console.log("boom!")
             obstacleArray[k].type = "dead";
             sound(obstacleArray[k]);
             var num = obstacleArray[k].id;
@@ -910,6 +933,7 @@ function checkObjectCollision(){
           }
           //when animals reach safehouse
           if (obstacleArray[j].type === "safe"){
+            obstacleArray[i].livestatus = "released";
             player.score ++;
             player.collecteditems--;
             document.querySelector("#scorecounter").innerText = `Your score is: ${player.score}`;
