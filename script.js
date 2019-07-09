@@ -78,7 +78,7 @@ function setDifficulty(){
   document.querySelector("#difficulty").remove();
   var difficulty = event.target.id;
   if (difficulty === "easy"){
-    dropRate = 300;
+    dropRate = 30000;
   }
   if (difficulty === "normal"){
     dropRate = 200;
@@ -174,7 +174,7 @@ function generateMap(){
   gameMap.setAttribute("id", map.id);
   document.querySelector("#gamecontainer").appendChild(gameMap);
 }
-//generate button keys(for those who like to play games the hard way... good luck!)
+//old code, may delete after - generate button keys(for those who like to play games the hard way... good luck!)
 // function generateButtonControl(){
   // var btnContainer = document.createElement("div");
   // btnContainer.setAttribute("id", "controls")
@@ -288,7 +288,7 @@ function generatePlayer(){
   player.positionX = randNum;
   player.positionY = randNum;
   var play = document.createElement("div");
-  play.id = "player"
+  play.id = player.id;
   play.style.position = player.position;
   play.style.zIndex = "1";
   play.style.height = player.height+"px";
@@ -301,6 +301,71 @@ function generatePlayer(){
   obstacleArray.push(player);
   mapping.appendChild(play);
 }
+//generate sheepdog to help player herd sheep back to barn
+function generateSheepDog(){
+  var randNum = Math.floor(Math.random()*map.width);
+  var randPosX = Math.floor(Math.random()*map.width);
+  var randPosY = Math.floor(Math.random()*map.height);
+  var dirArray = ["up","down","left","right"]
+  var dirNum = Math.floor(Math.random()*dirArray.length);
+  var sheepDog = {
+    id : "sheepdog",
+    position : "absolute",
+    type: "dog",
+    engagestatus: false, //start to collect animal
+    depositstatus: false, //start to deposit animal
+    movestatus: true, //set to false once player picks it up
+    zIndex: "1",
+    height: 10,
+    width: 5,
+    busystatus: false, //check status of sheep dog if it is picking up animal
+    positionY: randPosY,
+    positionX: randPosX,
+    color: "yellow",
+    directionstate: dirArray[dirNum],
+    resetdirectionstate: false,
+    animalarray:[],
+    housearray:[],
+    newdirection: function(){
+      var randNumDirection = Math.floor(Math.random()*4);
+      setTimeout(function(){
+        switch (randNumDirection){
+          case 0:
+            sheepDog.directionstate = "up"
+            sheepDog.resetdirectionstate = false
+          break;
+          case 1:
+            sheepDog.directionstate = "down"
+            sheepDog.resetdirectionstate = false
+          break;
+          case 2:
+            sheepDog.directionstate = "left"
+            sheepDog.resetdirectionstate = false
+          break;
+          case 3:
+            sheepDog.directionstate = "right"
+            sheepDog.resetdirectionstate = false
+          break;
+        };
+      },1000)},
+  }
+  if (randPosX%10!=0 || randPosY%10!=0 || randPosX+sheepDog.width>map.width || randPosY+sheepDog.height>map.height || ((randPosX+sheepDog.width>safeHouse.positionX) && (randPosX<safeHouse.positionX+safeHouse.width) && (randPosY+sheepDog.height>safeHouse.positionY) && (randPosY<safeHouse.positionY+safeHouse.height))){
+      generateSheepDog();
+  }else {
+    var helper = document.createElement("div");
+    helper.id = sheepDog.id;
+    helper.style.position = sheepDog.position;
+    helper.style.height = sheepDog.height+"px";
+    helper.style.width = sheepDog.width+"px";
+    helper.style.top = randPosY+"px";
+    helper.style.left = randPosX+"px";
+    helper.style.backgroundColor = sheepDog.color;
+    var mapping = document.querySelector("#gamearea");
+    obstacleArray.push(sheepDog);
+    mapping.appendChild(helper);
+  }
+}
+
 //generate safehouse
 function generateSafeHouse(){
   safeHouse = {
@@ -352,7 +417,8 @@ function generateArmageddon(){
     width: 8,
     color: "blue",
     counter: 0, //count down to end of explosion
-  }
+    }
+
   var newShadow = {
     id: randId*randId,
     type: "shadow",
@@ -397,9 +463,11 @@ function generateArmageddon(){
 }
 //generate collectible items
 function generateCollectibles(){
-  var randId = Math.floor(Math.random()*100000)
+  var randId = Math.floor(Math.random()*100000);
   var randPosX = Math.floor(Math.random()*map.width);
   var randPosY = Math.floor(Math.random()*map.height);
+  var dirArray = ["up","down","left","right"]
+  var dirNum = Math.floor(Math.random()*dirArray.length);
   var collectible = {
     id: randId,
     type: "good",
@@ -408,13 +476,39 @@ function generateCollectibles(){
     livestatus: false, //whether object is in follow mode
     position: "absolute",
     class: "collectible",
+    following: null,
     height: 18,
     width: 10,
     positionX: randPosX,
     positionY: randPosY,
     color: "green",
-    statuscollected: false,
+    statuscollected: false, //whether sheep has been collected by player
+    directionstate: dirArray[dirNum],
+    resetdirectionstate: false,
+    newdirection: function(){
+      var randNumDirection = Math.floor(Math.random()*4);
+      setTimeout(function(){
+        switch (randNumDirection){
+          case 0:
+            collectible.directionstate = "up"
+            collectible.resetdirectionstate = false
+          break;
+          case 1:
+            collectible.directionstate = "down"
+            collectible.resetdirectionstate = false
+          break;
+          case 2:
+            collectible.directionstate = "left"
+            collectible.resetdirectionstate = false
+          break;
+          case 3:
+            collectible.directionstate = "right"
+            collectible.resetdirectionstate = false
+          break;
+        };
+      },1000)},
   }
+
   if (randPosX%10!=0 || randPosY%10!=0 || randPosX+collectible.width>map.width || randPosY+collectible.height>map.height||((randPosX+collectible.width>safeHouse.positionX) && (randPosX<safeHouse.positionX+safeHouse.width) && (randPosY+collectible.height>safeHouse.positionY) && (randPosY<safeHouse.positionY+safeHouse.height))){
       generateCollectibles();
     }else{
@@ -505,39 +599,124 @@ function removeDebris(obj, gameObject){
 }
 //generate random movement for each object type
 function randomMovement(obj,gameObject){
-  var randNum = Math.floor(Math.random()*4)
-  switch (randNum){
-    case 0:
-      gameObject.positionX -= 1;
-      obj.style.left = gameObject.positionX+"px"
-    break;
-    case 1:
-      gameObject.positionX += 1;
-      obj.style.left = gameObject.positionX+"px"
-    break;
-    case 2:
-      gameObject.positionY += 1;
-      obj.style.top = gameObject.positionY+"px"
-    break;
-    case 3:
-      gameObject.positionY -= 1;
-      obj.style.top = gameObject.positionY+"px"
-    break;
+  //selects new direction to move
+  if (gameObject.directionstate === "up"){
+    gameObject.positionY--;
+    if (gameObject.resetdirectionstate === false){
+        gameObject.newdirection();
+        gameObject.resetdirectionstate = true;
+    }
+  }else if (gameObject.directionstate === "down"){
+    gameObject.positionY++;
+    if (gameObject.resetdirectionstate === false){
+        gameObject.newdirection();
+        gameObject.resetdirectionstate = true;
+    }
+  }else if (gameObject.directionstate === "left"){
+    gameObject.positionX--;
+    if (gameObject.resetdirectionstate === false){
+        gameObject.newdirection();
+        gameObject.resetdirectionstate = true;
+    }
+  }else if (gameObject.directionstate === "right"){
+    gameObject.positionX++;
+    if (gameObject.resetdirectionstate === false){
+        gameObject.newdirection();
+        gameObject.resetdirectionstate = true;
+    }
   }
 }
 //generate follow command for sheep based on player position
 function followMovement(obj,gameObject){
-  if (gameObject.positionX > player.positionX){
-    gameObject.positionX--;
+  var a = (gameObject.positionX-player.positionX)*(gameObject.positionX-player.positionX)
+  var b = (gameObject.positionY-player.positionY)*(gameObject.positionY-player.positionY)
+  if (gameObject.type === "good" && gameObject.livestatus === true && gameObject.following === "player"){
+    if (Math.abs(a)+Math.abs(b)>1000){
+      if (gameObject.positionX > player.positionX){
+        gameObject.positionX--;
+      }
+      if (gameObject.positionX < player.positionX){
+        gameObject.positionX++;
+      }
+      if (gameObject.positionY < player.positionY){
+        gameObject.positionY++;
+      }
+      if (gameObject.positionY > player.positionY){
+        gameObject.positionY--;
+      }
+    }
   }
-  if (gameObject.positionX < player.positionX){
-    gameObject.positionX++;
+}
+//targets sheep and puts it in the sheepdog's target array returns sheep if it has one
+function targetAnimal(obj,gameObject){
+  for (var i = 0; i < obstacleArray.length; i++){
+    if (obstacleArray[i].type === "good" && obstacleArray[i].livestatus === false && gameObject.busystatus === false){
+      gameObject.animalarray = obstacleArray[i];
+      gameObject.busystatus = true;
+    }
   }
-  if (gameObject.positionY < player.positionY){
-    gameObject.positionY++;
+}
+//sheepdog to target the house to deposit the animal
+function targetHouse(obj,gameObject){
+  console.log("housetarget")
+  for (var i = 0; i < obstacleArray.length; i++){
+    if (obstacleArray[i].type === "safe"){
+      gameObject.housearray = obstacleArray[i];
+      gameObject.engagestatus = true;
+      gameObject.busystatus = true;
+      console.log("house targetted")
+    }
   }
-  if (gameObject.positionY > player.positionY){
-    gameObject.positionY--;
+}
+//sheepdog moves to sheep position
+function collectAnimal(obj,gameObject){
+  var a = (gameObject.positionX-gameObject.animalarray.positionX)*(gameObject.positionX-gameObject.animalarray.positionX)
+  var b = (gameObject.positionY-gameObject.animalarray.positionY)*(gameObject.positionY-gameObject.animalarray.positionY)
+  if (Math.abs(a)+Math.abs(b)>10){
+    if (gameObject.positionX > gameObject.animalarray.positionX){
+      gameObject.positionX--;
+    }
+    if (gameObject.positionX < gameObject.animalarray.positionX){
+      gameObject.positionX++;
+    }
+    if (gameObject.positionY < gameObject.animalarray.positionY){
+      gameObject.positionY++;
+    }
+    if (gameObject.positionY > gameObject.animalarray.positionY){
+      gameObject.positionY--;
+    }
+  }
+  if((gameObject.positionX+gameObject.width > gameObject.animalarray.positionX) && (gameObject.positionX < gameObject.animalarray.positionX+gameObject.animalarray.width) && (gameObject.positionY+gameObject.height > gameObject.animalarray.positionY) && (gameObject.positionY < gameObject.animalarray.positionY+gameObject.animalarray.height)){
+    gameObject.engagestatus = true;
+    gameObject.busystatus = false;
+    gameObject.animalarray.livestatus = true;
+    gameObject.animalarray.following = "dog"
+    gameObject.animalarray = [];
+  }
+  //call off the hunt
+  if (!((gameObject.positionX+gameObject.width > gameObject.animalarray.positionX) && (gameObject.positionX < gameObject.animalarray.positionX+gameObject.animalarray.width) && (gameObject.positionY+gameObject.height > gameObject.animalarray.positionY) && (gameObject.positionY < gameObject.animalarray.positionY+gameObject.animalarray.height)) && gameObject.animalarray.livestatus === true){
+    gameObject.busystatus = false;
+    gameObject.animalarray = [];
+  }
+}
+
+//sheepdog proceeds to coordinate of safehouse to store animal
+function depositAnimal(obj,gameObject){
+  var a = (gameObject.positionX-gameObject.housearray.positionX)*(gameObject.positionX-gameObject.housearray.positionX)
+  var b = (gameObject.positionY-gameObject.housearray.positionY)*(gameObject.positionY-gameObject.housearray.positionY)
+  if (Math.abs(a)+Math.abs(b)>10){
+    if (gameObject.positionX > gameObject.housearray.positionX+(gameObject.housearray.width/2)){
+      gameObject.positionX--;
+    }
+    if (gameObject.positionX < gameObject.housearray.positionX+(gameObject.housearray.width/2)){
+      gameObject.positionX++;
+    }
+    if (gameObject.positionY < gameObject.housearray.positionY+(gameObject.housearray.height/2)){
+      gameObject.positionY++;
+    }
+    if (gameObject.positionY > gameObject.housearray.positionY+(gameObject.housearray.height/2)){
+      gameObject.positionY--;
+    }
   }
 }
 //movement for player using arrow keys
@@ -589,17 +768,17 @@ function move(){
     }
   }
 }
-//for use in case arrow keys do not work
-function moveSetSecondary (){
-  var moving = event.target
-  for (var i = 0; i < Object.keys(player).length; i++){
-    if (Object.keys(player)[i] === moving.id){
-      var direction = Object.keys(player)[i];
-      player[direction]();
-    }
-  }
-}
-// function to update objects as they move
+//for use in case arrow keys do not work - old code, may delete after
+// function moveSetSecondary (){
+//   var moving = event.target
+//   for (var i = 0; i < Object.keys(player).length; i++){
+//     if (Object.keys(player)[i] === moving.id){
+//       var direction = Object.keys(player)[i];
+//       player[direction]();
+//     }
+//   }
+// }
+// function to update objects as they move this controls the behavior of the objects
 function updateObjectMove(){
   if (player.active === true){
     for (var i = 0; i < obstacleArray.length; i++){
@@ -611,8 +790,20 @@ function updateObjectMove(){
       // move objects only if they have the status set to true. bombs will not continue moving once they have been set off
       if (obstacleArray[i]["type"] === "good" && obstacleArray[i]["movestatus"] === true && obstacleArray[i]["livestatus"] === false){
         randomMovement(obj,obstacleArray[i]);
-      }else if (obstacleArray[i]["type"] === "good" && obstacleArray[i]["movestatus"] === true && obstacleArray[i]["livestatus"] === true){
+      }else if (obstacleArray[i]["type"] === "dog" && obstacleArray[i]["movestatus"] === true){
+        randomMovement(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "dog" && obstacleArray[i]["movestatus"] === false && obstacleArray[i]["engagestatus"] === false && obstacleArray[i]["busystatus"] === false){
+        targetAnimal(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "dog" && obstacleArray[i]["movestatus"] === false && obstacleArray[i]["engagestatus"] === false && obstacleArray[i]["busystatus"] === true){
+        collectAnimal(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "dog" && obstacleArray[i]["movestatus"] === false && obstacleArray[i]["engagestatus"] === true && obstacleArray[i]["busystatus"] === false){
+        targetHouse(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "dog" && obstacleArray[i]["movestatus"] === false && obstacleArray[i]["engagestatus"] === true && obstacleArray[i]["busystatus"] === true){
+        depositAnimal(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "good" && obstacleArray[i]["livestatus"] === true && obstacleArray[i]["following"] === "player"){
         followMovement(obj,obstacleArray[i]);
+      }else if (obstacleArray[i]["type"] === "good" && obstacleArray[i]["livestatus"] === true && obstacleArray[i]["following"] === "dog"){
+        followDogMovement(obj,obstacleArray[i]);
       }else if (obstacleArray[i]["type"] === "boom" && obstacleArray[i]["livestatus"] === false && obstacleArray[i]["explodestatus"] === false){
         dropping(obj,obstacleArray[i]);
       }else if (obstacleArray[i]["type"] === "boom" && obstacleArray[i]["livestatus"] === true && obstacleArray[i]["explodestatus"] === true){
@@ -649,9 +840,12 @@ function checkObjectCollision(){
         sound(obstacleArray[i])
         obstacleArray[i]["livestatus"] = true; //sheep will start following player now
         obstacleArray[i].statuscollected = true;
+        obstacleArray[i].following = "player";
         player.collecteditems +=1;
         var carry = document.querySelector("#carrycounter")
         carry.innerText = `You are currently carrying ${player.collecteditems} animals`;
+      }else if(obstacleArray[i].type === "dog"){
+         obstacleArray[i].movestatus = false;
       }else if (obstacleArray[i].type === "boom" && obstacleArray[i].explodestatus===true){
         console.log("boom!")
         player.active = false;
@@ -660,7 +854,7 @@ function checkObjectCollision(){
       }
     }
 
-    //check if a sheep has been blown up by a bomb or bumps into another sheep or has ben deposited into the barn
+    //check if a sheep has been blown up by a bomb
     if (obstacleArray[i].type === "boom" && obstacleArray[i].explodestatus===true){
       for (var k = 0; k < obstacleArray.length; k++){
         if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[k].positionX) && (obstacleArray[i].positionX < obstacleArray[k].positionX+obstacleArray[k].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[k].positionY) && (obstacleArray[i].positionY < obstacleArray[k].positionY+obstacleArray[k].height)){
@@ -689,6 +883,7 @@ function checkObjectCollision(){
         }
       }
     }
+    //if animals collide into each other, bump them apart
     if (obstacleArray[i].type === "good" && obstacleArray[i].livestatus === true){
       for (var j = 0; j < obstacleArray.length; j++){
         if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[j].positionX) && (obstacleArray[i].positionX < obstacleArray[j].positionX+obstacleArray[j].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[j].positionY) && (obstacleArray[i].positionY < obstacleArray[j].positionY+obstacleArray[j].height)){
@@ -696,23 +891,24 @@ function checkObjectCollision(){
             var randBump = Math.floor(Math.random()*4);
             switch (randBump){
               case 0:
-                obstacleArray[i].positionY-=obstacleArray[i].height;
-                obstacleArray[j].positionY+=obstacleArray[j].height;
+                obstacleArray[i].positionY-=obstacleArray[i].height/3;
+                obstacleArray[j].positionY+=obstacleArray[j].height/3;
               break;
               case 1:
-                obstacleArray[i].positionY+=obstacleArray[i].height;
-                obstacleArray[j].positionY-=obstacleArray[j].height;
+                obstacleArray[i].positionY+=obstacleArray[i].height/3;
+                obstacleArray[j].positionY-=obstacleArray[j].height/3;
               break;
               case 2:
-                obstacleArray[i].positionX+=obstacleArray[i].width;
-                obstacleArray[j].positionX-=obstacleArray[j].width;
+                obstacleArray[i].positionX+=obstacleArray[i].width/3;
+                obstacleArray[j].positionX-=obstacleArray[j].width/3;
               break;
               case 3:
-                obstacleArray[i].positionX-=obstacleArray[i].width;
-                obstacleArray[j].positionX+=obstacleArray[j].width;
+                obstacleArray[i].positionX-=obstacleArray[i].width/3;
+                obstacleArray[j].positionX+=obstacleArray[j].width/3;
               break;
             }
           }
+          //when animals reach safehouse
           if (obstacleArray[j].type === "safe"){
             player.score ++;
             player.collecteditems--;
