@@ -117,7 +117,6 @@ function restartGame(){
   player.collecteditems = 0;
   player.animaldeath = 0;
   player.score = 0;
-  player.barnstate = 0;
   obstacleArray = [];
   selectDifficulty()
 }
@@ -143,7 +142,6 @@ var player = {
   color: "black",
   collecteditems: 0,
   score: 0,
-  barnstate: 0,
   up: function(){
     player.positionY-=2;
   },
@@ -325,7 +323,7 @@ function generateSafeHouse(){
   obj.style.top = safeHouse.positionY+"px";
   obj.style.left = safeHouse.positionX+"px";
   obj.style.backgroundImage = "url(images/barn3-100x100.png)";
-  obj.style.zIndex = "2"
+  obj.style.zIndex = "4"
   var mapping = document.querySelector("#gamearea");
   obstacleArray.push(safeHouse);
   mapping.appendChild(obj);
@@ -856,9 +854,8 @@ function checkObjectCollision(){
           }
         }
       }
-    }
     //if animals collide into each other, bump them apart
-    if (obstacleArray[i].type === "good" || obstacleArray[i].type === "dog"){
+    }else if (obstacleArray[i].type === "good" || obstacleArray[i].type === "dog"){
       for (var j = 0; j < obstacleArray.length; j++){
         if ((obstacleArray[i].positionX+obstacleArray[i].width > obstacleArray[j].positionX) && (obstacleArray[i].positionX < obstacleArray[j].positionX+obstacleArray[j].width) && (obstacleArray[i].positionY+obstacleArray[i].height > obstacleArray[j].positionY) && (obstacleArray[i].positionY < obstacleArray[j].positionY+obstacleArray[j].height)){
           if (obstacleArray[j].type === "good" || obstacleArray[j].type === "dog"){
@@ -898,16 +895,29 @@ function checkObjectCollision(){
             }
             document.querySelector("#scorecounter").innerText = `Your score is: ${player.score}`;
             document.querySelector("#carrycounter").innerText = `You are currently carrying ${player.collecteditems} animals`;
-            if (player.score>0 && player.barnstate === 0){
-              var sheep = document.createElement("div");
-              sheep.style.position = "absolute";
-              sheep.style.height = "18px";
-              sheep.style.width = "10px";
+            var sheep = document.createElement("div");
+            sheep.style.position = "absolute";
+            sheep.style.height = "18px";
+            sheep.style.width = "10px";
+
+            if (player.score <= 1){
               sheep.style.top = "82px";
-              sheep.style.left = "50px";
+              sheep.style.left = "55px";
+              sheep.style.zIndex = "-1";
               sheep.style.backgroundImage = "url(images/sheep-10x18.png)";
               document.querySelector("#safehouse").appendChild(sheep)
-              player.barnstate = 1;
+            }else if (player.score <= 2){
+              sheep.style.top = "82px";
+              sheep.style.left = "45px";
+              sheep.style.zIndex = "-1";
+              sheep.style.backgroundImage = "url(images/sheep-10x18.png)";
+              document.querySelector("#safehouse").appendChild(sheep)
+            }else if (player.score <= 3){
+              sheep.style.top = "82px";
+              sheep.style.left = "35px";
+              sheep.style.zIndex = "-1";
+              sheep.style.backgroundImage = "url(images/sheep-10x18.png)";
+              document.querySelector("#safehouse").appendChild(sheep)
             }
             break;
           }
