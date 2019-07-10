@@ -50,11 +50,22 @@ body{
   padding:0;
   margin:0;
 }
-h3{
+h1,h2,h3{
   color: white;
 }
+span{
+  font-weight: bold;
+  font-style: italic;
+}
 #introtext{
-  width: 50%;
+  width: 60%;
   margin: 0 auto;
-  background-color: rgba(0,0,0,0.5)
+  background-color: rgba(0,0,0,0.5);
+}
+.intro{
+  display: block;
+  text-align:center;
+}
+.content{
+  display:flex;
 }

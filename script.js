@@ -80,14 +80,17 @@ function setDifficulty(){
   if (difficulty === "easy"){
     dropRate = 300000;
     player.animaldeathlimit = 20;
+    player.dogspawn = 15;
   }
   if (difficulty === "normal"){
     dropRate = 200;
     player.animaldeathlimit = 15;
+    player.dogspawn = 20;
   }
   if (difficulty === "farmegeddon"){
     dropRate = 100;
     player.animaldeathlimit = 10;
+    player.dogspawn = 30;
   }
   var siren = new Audio("sounds/air-raid.mp3")
   siren.play();
@@ -104,8 +107,13 @@ function setDifficulty(){
       generateMultigeddon();
       generateCollectibles();
     }
-    if (globalCounter % dropRate === 0 && globalCounter%12000 === 0 && globalCounter != 0){
+    if (player.score % player.dogspawn === 0 && player.score != 0 && player.trigger === 0){
       generateSheepDog();
+    }
+    if (player.score % player.dogspawn === 0){
+      player.trigger = 1;
+    }else {
+      player.trigger = 0;
     }
     globalCounter++;
   },10)
@@ -141,6 +149,8 @@ var player = {
   animaldeathlimit: 10,
   color: "black",
   collecteditems: 0,
+  dogspawn: null,
+  trigger: 0, //sets trigger to spawn dog once
   score: 0,
   up: function(){
     player.positionY-=2;
