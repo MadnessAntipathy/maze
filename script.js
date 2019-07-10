@@ -60,10 +60,10 @@ function selectDifficulty(){
 function changeColor(){
   var text = event.target;
   if (text.id === "easy"){
-    text.style.backgroundColor = "rgba(255,255,0,0.5)";
+    text.style.backgroundColor = "rgba(0,255,0,0.5)";
   }
   if (text.id === "normal"){
-    text.style.backgroundColor = "rgba(0,255,0,0.5)";
+    text.style.backgroundColor = "rgba(255,255,0,0.5)";
   }
   if (text.id === "farmegeddon"){
     text.style.backgroundColor = "rgba(255,0,0,0.5)";
